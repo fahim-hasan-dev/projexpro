@@ -29,7 +29,6 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
 
         // 🔹 Step 3: Extract necessary info
         const productId = subscription.items.data[0]?.price?.product as string
-        // Use a custom type that includes payment_intent
         const invoice = subscription.latest_invoice as Stripe.Invoice & {
             payment_intent?: string | Stripe.PaymentIntent
         }
@@ -45,15 +44,19 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
                     : invoice.payment_intent
             trxId = paymentIntent?.id
         } else if (invoice?.id) {
-            trxId = invoice.id // Use invoice ID as fallback
+            trxId = invoice.id
         } else {
-            trxId = `sub_${subscription.id}_${Date.now()}` // Generate a fallback ID
+            trxId = `sub_${subscription.id}_${Date.now()}`
         }
 
         const amountPaid = (invoice?.total || 0) / 100
 
-        // 🔹 Step 4: Match user by email
-        const user = await User.findOne({ email: customer.email })
+        // 🔹 Step 4: Match user by email or metadata
+        const userIdFromMeta = subscription.metadata?.userId
+        let user = userIdFromMeta ? await User.findById(userIdFromMeta) : null
+        if (!user && customer.email) {
+            user = await User.findOne({ email: customer.email })
+        }
         if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
 
         // 🔹 Step 5: Match plan by Stripe productId
@@ -66,7 +69,7 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
             : new Date()
         const currentPeriodEnd = subscription.current_period_end
             ? new Date(subscription.current_period_end * 1000)
-            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Default to 30 days if missing
+            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
         // 🔹 Step 7: Save subscription info in DB
         const subscriptionData = {
@@ -81,21 +84,32 @@ export const handleSubscriptionCreated = async (data: Stripe.Subscription) => {
             currentPeriodStart,
             currentPeriodEnd,
         }
-        console.log('subscriptionData', subscriptionData)
+        
         await Subscription.create(subscriptionData)
 
-        // 🔹 Step 8: Update user subscription status
-        await User.findByIdAndUpdate(user._id, { subscribe: true })
+        // 🔹 Step 8: Update user profile subscription status
+        await User.findByIdAndUpdate(user._id, {
+            subscribe: true,
+            subscription: {
+                plan: plan._id,
+                subscriptionId: subscription.id,
+                status: 'active',
+                currentPeriodStart,
+                currentPeriodEnd,
+            },
+        })
 
-        await emailHelper.sendEmail(
-            emailTemplate.subscriptionActivatedEmail({
-                user,
-                plan,
-                amountPaid,
-                trxId,
-                invoicePdf: invoicePdf || '',
-            }),
-        )
+        if (user.email) {
+            await emailHelper.sendEmail(
+                emailTemplate.subscriptionActivatedEmail({
+                    user,
+                    plan,
+                    amountPaid,
+                    trxId,
+                    invoicePdf: invoicePdf || '',
+                }),
+            )
+        }
     } catch (error) {
         console.error('Error in handleSubscriptionCreated:', error)
         return error

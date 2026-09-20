@@ -25,6 +25,10 @@ const planSchema = new Schema<IPlan, PlanModel>(
             enum: ['Monthly' , 'Yearly'],
             required: true
         },
+        maxUnits: {
+            type: Number,
+            default: null
+        },
         productId: {
             type: String,
             required: true

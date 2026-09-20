@@ -2,14 +2,43 @@ import { Model, Types } from "mongoose";
 import { APPROVAL_STATUS, USER_ROLES, USER_STATUS } from "../../../enum/user";
 export { APPROVAL_STATUS, USER_ROLES, USER_STATUS };
 
+export type ILicenseInformation = {
+    licenseType?: string;
+    licenseNumber?: string;
+    dateIssued?: Date | string;
+    stateIssued?: string;
+    licenseDocument?: string;
+};
+
+export type IServiceProviderProfile = {
+    streetAddress?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    bio?: string;
+    skills?: string[];
+    companyName?: string;
+    officeAddress?: string;
+    officeCity?: string;
+    officeState?: string;
+    officeZipCode?: string;
+    officePhone?: string;
+    taxId?: string;
+    yearsInBusiness?: number;
+    licenses?: ILicenseInformation[];
+    governmentId?: string;
+    proofOfInsurance?: string;
+    documents?: { title: string; fileUrl: string; type?: string }[];
+    isAccountPaused?: boolean;
+    approvalStatus?: APPROVAL_STATUS;
+    rejectionReason?: string;
+};
+
 export type IPropertyManagerProfile = {
-    // Contact Details (Step 2)
     contactFullName?: string;
     jobTitle?: string;
     businessEmail?: string;
     businessPhone?: string;
-
-    // Business Details (Step 3 & 4)
     companyName?: string;
     legalBusinessName?: string;
     dbaTradeName?: string;
@@ -21,11 +50,11 @@ export type IPropertyManagerProfile = {
     portfolioSize?: '1-10 Units' | '11-50 Units' | '51-200 Units' | '201-500 Units' | '501+ Units' | string;
     maintenanceInfrastructure?: string;
     propertyTypes?: string[];
-
-    // Approval Information
     approvalStatus?: APPROVAL_STATUS;
     rejectionReason?: string;
 };
+
+export type IUserProfile = IPropertyManagerProfile & IServiceProviderProfile;
 
 type IAuthentication = {
     restrictionLeftAt: Date | null
@@ -38,6 +67,14 @@ type IAuthentication = {
     requestCount?: number
     authType?: 'createAccount' | 'resetPassword'
 }
+
+export type IUserSubscriptionInfo = {
+    plan?: Types.ObjectId;
+    subscriptionId?: string;
+    status?: 'active' | 'expired' | 'cancel' | string;
+    currentPeriodStart?: Date;
+    currentPeriodEnd?: Date;
+};
 
 export type IUser = {
     _id: Types.ObjectId;
@@ -52,7 +89,13 @@ export type IUser = {
     status: USER_STATUS;
     verified: boolean;
     role: USER_ROLES;
-    propertyManagerProfile?: IPropertyManagerProfile;
+    approvalStatus?: APPROVAL_STATUS;
+    rejectionReason?: string;
+    profileCompletionPercentage?: number;
+    totalUnitsUsed?: number;
+    subscribe?: boolean;
+    subscription?: IUserSubscriptionInfo;
+    profile?: IUserProfile;
     authentication: IAuthentication;
     deviceToken?: string;
     fcmToken?: string;

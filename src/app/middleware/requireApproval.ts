@@ -15,26 +15,21 @@ export const requireApproval = async (req: Request, res: Response, next: NextFun
             return next();
         }
 
-        const user = await User.findById(req.user.authId || req.user.id).select('role propertyManagerProfile');
+        const user = await User.findById(req.user.authId || req.user.id).select('role approvalStatus rejectionReason profile');
 
         if (!user) {
-            // Check if admin
             return next();
         }
 
-        // Service Provider is always auto-approved
-        if (user.role === USER_ROLES.SERVICE_PROVIDER) {
-            return next();
-        }
-
-        if (user.role === USER_ROLES.PROPERTY_MANAGER) {
-            const approvalStatus = user.propertyManagerProfile?.approvalStatus || APPROVAL_STATUS.PENDING;
-            const rejectionReason = user.propertyManagerProfile?.rejectionReason;
+        if (user.role === USER_ROLES.PROPERTY_MANAGER || user.role === USER_ROLES.SERVICE_PROVIDER) {
+            const approvalStatus = user.approvalStatus || user.profile?.approvalStatus || APPROVAL_STATUS.PENDING;
+            const rejectionReason = user.rejectionReason || user.profile?.rejectionReason;
+            const roleName = user.role === USER_ROLES.PROPERTY_MANAGER ? 'Property Manager' : 'Service Provider';
 
             if (approvalStatus === APPROVAL_STATUS.PENDING || approvalStatus === APPROVAL_STATUS.RESUBMITTED) {
                 throw new ApiError(
                     StatusCodes.FORBIDDEN,
-                    'Your Property Manager account is currently pending admin approval. Please wait for an administrator to review and approve your account.'
+                    `Your ${roleName} account is currently pending admin approval. Please wait for an administrator to review and approve your account.`
                 );
             }
 
@@ -42,7 +37,7 @@ export const requireApproval = async (req: Request, res: Response, next: NextFun
                 const reasonText = rejectionReason ? `: ${rejectionReason}` : '.';
                 throw new ApiError(
                     StatusCodes.FORBIDDEN,
-                    `Your Property Manager account application was rejected${reasonText} Please update and resubmit your profile details for re-evaluation.`
+                    `Your ${roleName} account application was rejected${reasonText} Please update and resubmit your details for re-evaluation.`
                 );
             }
         }

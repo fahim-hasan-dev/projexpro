@@ -74,15 +74,17 @@ const updateAdminProfile = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-const managePropertyManagerApproval = catchAsync(async (req: Request, res: Response) => {
-    const result = await AdminServices.managePropertyManagerApproval(req.params.id, req.body);
+const manageUserApproval = catchAsync(async (req: Request, res: Response) => {
+    const result = await AdminServices.manageUserApproval(req.params.id, req.body);
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
-        message: `Property Manager approval status updated to ${req.body.approvalStatus}`,
+        message: `User approval status updated to ${req.body.approvalStatus}`,
         data: result,
     });
 });
+
+const managePropertyManagerApproval = manageUserApproval;
 
 const getAllPropertyManagers = catchAsync(async (req: Request, res: Response) => {
     const result = await AdminServices.getAllPropertyManagers(req.query);
@@ -90,6 +92,16 @@ const getAllPropertyManagers = catchAsync(async (req: Request, res: Response) =>
         statusCode: StatusCodes.OK,
         success: true,
         message: 'Property Managers retrieved successfully',
+        data: result,
+    });
+});
+
+const getAllServiceProviders = catchAsync(async (req: Request, res: Response) => {
+    const result = await AdminServices.getAllServiceProviders(req.query);
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: 'Service Providers retrieved successfully',
         data: result,
     });
 });
@@ -102,6 +114,8 @@ export const AdminController = {
     deleteAdmin,
     getAdminProfile,
     updateAdminProfile,
+    manageUserApproval,
     managePropertyManagerApproval,
     getAllPropertyManagers,
+    getAllServiceProviders,
 };

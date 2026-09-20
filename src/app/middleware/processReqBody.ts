@@ -8,11 +8,12 @@ import sharp from 'sharp'
 
 type IFolderName =
   | 'image'
+  | 'images'
   | 'media'
   | 'documents'
-  | 'logo'
-  | 'lostImage'
-  | 'shippingLabel'
+  | 'licenseDocument'
+  | 'governmentId'
+  | 'proofOfInsurance'
 
 interface ProcessedFiles {
   [key: string]: string | string[] | undefined
@@ -20,11 +21,12 @@ interface ProcessedFiles {
 
 const uploadFields = [
   { name: 'image', maxCount: 1 },
+  { name: 'images', maxCount: 5 },
   { name: 'media', maxCount: 3 },
-  { name: 'documents', maxCount: 3 },
-  { name: 'logo', maxCount: 1 },
-  { name: 'lostImage', maxCount: 4 },
-  { name: 'shippingLabel', maxCount: 1 },
+  { name: 'documents', maxCount: 5 },
+  { name: 'licenseDocument', maxCount: 3 },
+  { name: 'governmentId', maxCount: 1 },
+  { name: 'proofOfInsurance', maxCount: 1 },
 ] as const
 
 export const fileAndBodyProcessorUsingDiskStorage = () => {
@@ -57,18 +59,21 @@ export const fileAndBodyProcessorUsingDiskStorage = () => {
     cb: FileFilterCallback,
   ) => {
     try {
+      const commonDocTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/jpg',
+        'application/pdf',
+      ];
+
       const allowedTypes = {
         image: ['image/jpeg', 'image/png', 'image/jpg'],
-        media: ['video/mp4', 'audio/mpeg'],
-        documents: ['application/pdf'],
-        logo: ['image/jpeg', 'image/png', 'image/jpg'],
-        lostImage: ['image/jpeg', 'image/png', 'image/jpg'],
-        shippingLabel: [
-          'image/jpeg',
-          'image/png',
-          'image/jpg',
-          'application/pdf',
-        ],
+        images: ['image/jpeg', 'image/png', 'image/jpg'],
+        media: ['video/mp4', 'audio/mpeg', 'image/jpeg', 'image/png', 'image/jpg'],
+        documents: commonDocTypes,
+        licenseDocument: commonDocTypes,
+        governmentId: commonDocTypes,
+        proofOfInsurance: commonDocTypes,
       };
 
       const fieldType = file.fieldname as IFolderName;
@@ -127,9 +132,7 @@ export const fileAndBodyProcessorUsingDiskStorage = () => {
                 paths.push(filePath);
 
                 if (
-                  ['image', 'logo', 'lostImage', 'shippingLabel'].includes(
-                    fieldName,
-                  ) &&
+                  ['image', 'images', 'governmentId', 'proofOfInsurance'].includes(fieldName) &&
                   file.mimetype.startsWith('image/')
                 ) {
                   const fullPath = path.join(
@@ -169,14 +172,12 @@ export const fileAndBodyProcessorUsingDiskStorage = () => {
 
         req.body = {
           ...req.body,
-          ...(processedFiles.logo && { logo: processedFiles.logo }),
           ...(processedFiles.image && { image: processedFiles.image }),
-          ...(processedFiles.shippingLabel && {
-            shippingLabel: processedFiles.shippingLabel,
-          }),
-          ...(processedFiles.lostImage && {
-            images: processedFiles.lostImage,
-          }),
+          ...(processedFiles.images && { images: processedFiles.images }),
+          ...(processedFiles.documents && { documents: processedFiles.documents }),
+          ...(processedFiles.licenseDocument && { licenseDocument: processedFiles.licenseDocument }),
+          ...(processedFiles.governmentId && { governmentId: processedFiles.governmentId }),
+          ...(processedFiles.proofOfInsurance && { proofOfInsurance: processedFiles.proofOfInsurance }),
         };
 
         next();

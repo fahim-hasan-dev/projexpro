@@ -103,32 +103,36 @@ const updateAdminProfile = async (user: JwtPayload, payload: Partial<IAdmin>) =>
     return result;
 };
 
-const managePropertyManagerApproval = async (
+const manageUserApproval = async (
     id: string,
     payload: { approvalStatus: APPROVAL_STATUS; rejectionReason?: string }
 ) => {
     const user = await User.findById(id);
     if (!user) {
-        throw new ApiError(StatusCodes.NOT_FOUND, 'Property Manager account not found');
+        throw new ApiError(StatusCodes.NOT_FOUND, 'User account not found');
     }
 
-    if (user.role !== USER_ROLES.PROPERTY_MANAGER) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'User is not a Property Manager');
+    if (user.role !== USER_ROLES.PROPERTY_MANAGER && user.role !== USER_ROLES.SERVICE_PROVIDER) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Only Property Managers and Service Providers require approval management');
     }
+
+    const rejectionReason = payload.approvalStatus === APPROVAL_STATUS.REJECTED 
+        ? (payload.rejectionReason || 'Application rejected by administrator')
+        : '';
 
     const updateData: Record<string, any> = {
-        'propertyManagerProfile.approvalStatus': payload.approvalStatus,
+        approvalStatus: payload.approvalStatus,
+        rejectionReason,
     };
 
-    if (payload.approvalStatus === APPROVAL_STATUS.REJECTED) {
-        updateData['propertyManagerProfile.rejectionReason'] = payload.rejectionReason || 'Application rejected by administrator';
-    } else if (payload.approvalStatus === APPROVAL_STATUS.APPROVED) {
-        updateData['propertyManagerProfile.rejectionReason'] = '';
-    }
+    updateData['profile.approvalStatus'] = payload.approvalStatus;
+    updateData['profile.rejectionReason'] = rejectionReason;
 
     const result = await User.findByIdAndUpdate(id, updateData, { new: true }).select('-password -authentication');
     return result;
 };
+
+const managePropertyManagerApproval = manageUserApproval;
 
 const getAllPropertyManagers = async (query: Record<string, unknown>) => {
     const userQueryBuilder = new QueryBuilder(
@@ -154,6 +158,30 @@ const getAllPropertyManagers = async (query: Record<string, unknown>) => {
     };
 };
 
+const getAllServiceProviders = async (query: Record<string, unknown>) => {
+    const userQueryBuilder = new QueryBuilder(
+        User.find({ role: USER_ROLES.SERVICE_PROVIDER, status: { $ne: USER_STATUS.DELETED } }).select('-password -authentication'),
+        query
+    )
+        .filter()
+        .sort()
+        .fields()
+        .paginate();
+
+    const serviceProviders = await userQueryBuilder.modelQuery.lean();
+    const paginationInfo = await userQueryBuilder.getPaginationInfo();
+    const totalServiceProviders = await User.countDocuments({
+        role: USER_ROLES.SERVICE_PROVIDER,
+        status: { $ne: USER_STATUS.DELETED },
+    });
+
+    return {
+        serviceProviders,
+        meta: paginationInfo,
+        totalServiceProviders,
+    };
+};
+
 export const AdminServices = {
     createAdmin,
     getAllAdmins,
@@ -162,6 +190,8 @@ export const AdminServices = {
     deleteAdmin,
     getAdminProfile,
     updateAdminProfile,
+    manageUserApproval,
     managePropertyManagerApproval,
     getAllPropertyManagers,
+    getAllServiceProviders,
 };

@@ -53,6 +53,19 @@ router.get(
     AdminController.getAllPropertyManagers
 );
 
+router.get(
+    '/service-providers',
+    auth(ADMIN_ROLES.SUPER_ADMIN, ADMIN_ROLES.ADMIN),
+    AdminController.getAllServiceProviders
+);
+
+router.patch(
+    '/users/:id/approval',
+    auth(ADMIN_ROLES.SUPER_ADMIN, ADMIN_ROLES.ADMIN),
+    validateRequest(AdminValidations.manageUserApprovalZodSchema),
+    AdminController.manageUserApproval
+);
+
 router.patch(
     '/property-managers/:id/approval',
     auth(ADMIN_ROLES.SUPER_ADMIN, ADMIN_ROLES.ADMIN),

@@ -7,6 +7,7 @@ export const createPlanZodValidationSchema = z.object({
         price: z.number({ required_error: "Price is required" }),
         duration: z.enum(["1 month", "3 months", "6 months", "1 year"], { required_error: "Duration is required" }),
         paymentType: z.enum(["Monthly", "Yearly"], { required_error: "Payment type is required" }),
+        maxUnits: z.number().optional().nullable(),
         features: z.array(z.string({ required_error: "Feature is required" }), { required_error: "Features are required" }),
     })
 });
@@ -19,6 +20,7 @@ export const updatePlanZodValidationSchema = z.object({
         price: z.number({ required_error: "Price is required" }).optional(),
         duration: z.enum(["1 month", "3 months", "6 months", "1 year"], { required_error: "Duration is required" }).optional(),
         paymentType: z.enum(["Monthly", "Yearly"], { required_error: "Payment type is required" }).optional(),
+        maxUnits: z.number().optional().nullable(),
         features: z.array(z.string({ required_error: "Feature is required" }), { required_error: "Features are required" }).optional(),
     })
 });

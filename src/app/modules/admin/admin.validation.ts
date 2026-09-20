@@ -26,17 +26,20 @@ export const updateAdminZodSchema = z.object({
   }),
 });
 
-export const managePropertyManagerApprovalZodSchema = z.object({
+export const manageUserApprovalZodSchema = z.object({
   body: z.object({
     approvalStatus: z.nativeEnum(APPROVAL_STATUS, {
-      required_error: "Approval status is required (approved or rejected)",
+      required_error: "Approval status is required (approved, rejected, or pending)",
     }),
     rejectionReason: z.string().optional(),
   }),
 });
 
+export const managePropertyManagerApprovalZodSchema = manageUserApprovalZodSchema;
+
 export const AdminValidations = {
   createAdminZodSchema,
   updateAdminZodSchema,
+  manageUserApprovalZodSchema,
   managePropertyManagerApprovalZodSchema,
 };
