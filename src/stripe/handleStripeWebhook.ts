@@ -11,6 +11,10 @@ import { Subscription } from '../app/modules/subscription/subscription.model'
 import { Payment } from '../app/modules/payment/payment.model'
 import { Plan } from '../app/modules/plan/plan.model'
 
+import { InvoiceModel } from '../app/modules/invoice/invoice.model'
+import { INVOICE_STATUS } from '../app/modules/invoice/invoice.interface'
+import { NotificationService } from '../app/modules/notification/notification.service'
+
 const handleStripeWebhook = async (req: Request, res: Response) => {
     logger.info('Received Stripe Webhook Event');
     const signature = req.headers['stripe-signature'] as string
@@ -36,15 +40,54 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                 logger.info('✅ Checkout completed:', session.id)
 
                 if (session.mode === 'payment') {
-                    // Handle one-time payment
-                    await Payment.create({
-                        email: session.customer_details?.email,
-                        amount: (session.amount_total || 0) / 100,
-                        transactionId: (session.payment_intent as string) || session.id,
-                        dateTime: new Date(),
-                        customerName: session.customer_details?.name,
-                        referenceId: session.metadata?.referenceId,
-                    });
+                    const paidAmt = (session.amount_total || 0) / 100;
+                    const trxId = (session.payment_intent as string) || session.id;
+
+                    // Check if payment is for an Invoice
+                    if (session.metadata?.invoiceId) {
+                        const invoiceId = session.metadata.invoiceId;
+                        const invoice = await InvoiceModel.findById(invoiceId);
+                        if (invoice) {
+                            await InvoiceModel.findByIdAndUpdate(invoiceId, {
+                                status: INVOICE_STATUS.PAID,
+                                paidAmount: paidAmt,
+                                balanceDue: 0,
+                                stripePaymentIntentId: trxId,
+                            });
+
+                            await Payment.create({
+                                email: session.customer_details?.email,
+                                amount: paidAmt,
+                                transactionId: trxId,
+                                dateTime: new Date(),
+                                customerName: session.customer_details?.name,
+                                referenceId: invoice._id,
+                            });
+
+                            try {
+                                await NotificationService.insertNotification({
+                                    receiver: invoice.propertyManager,
+                                    title: "Invoice Paid",
+                                    message: `Payment of £${paidAmt} for invoice ${invoice.invoiceNo} has been completed successfully.`,
+                                    referenceId: invoice._id,
+                                    screen: "INVOICE",
+                                    type: "USER",
+                                });
+                            } catch (err) {
+                                logger.error("Failed to send notification for invoice payment", err);
+                            }
+                        }
+                    } else {
+                        // Handle generic one-time payment
+                        await Payment.create({
+                            email: session.customer_details?.email,
+                            amount: paidAmt,
+                            transactionId: trxId,
+                            dateTime: new Date(),
+                            customerName: session.customer_details?.name,
+                            referenceId: session.metadata?.referenceId,
+                        });
+                    }
                 }
                 break;
             }

@@ -15,6 +15,7 @@ import { NotificationRoutes } from '../modules/notification/notification.routes'
 import { AdminRoutes } from '../modules/admin/admin.route';
 import { PropertyRoutes } from '../modules/property/property.route';
 import { ServiceRequestRoutes } from '../modules/serviceRequest/serviceRequest.route';
+import { InvoiceRoutes } from '../modules/invoice/invoice.route';
 
 
 const router = express.Router();
@@ -26,6 +27,7 @@ const apiRoutes = [
     { path: "/category", route: CategoryRoutes },
     { path: "/property", route: PropertyRoutes },
     { path: "/service-request", route: ServiceRequestRoutes },
+    { path: "/invoice", route: InvoiceRoutes },
     { path: "/review", route: ReviewRoutes },
     { path: "/payment", route: PaymentRoutes },
     { path: "/public", route: PublicRoutes },

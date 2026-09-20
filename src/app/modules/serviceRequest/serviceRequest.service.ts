@@ -8,6 +8,7 @@ import { PropertyModel } from "../property/property.model";
 import { User } from "../user/user.model";
 import { USER_ROLES, ADMIN_ROLES } from "../../../enum/user";
 import { NotificationService } from "../notification/notification.service";
+import { InvoiceServices } from "../invoice/invoice.service";
 
 // Create Service Request (Property Manager)
 const createServiceRequest = async (userId: string, payload: IServiceRequest) => {
@@ -270,11 +271,18 @@ const updateStatus = async (id: string, userId: string, role: string, status: RE
         });
       }
     } else if (status === REQUEST_STATUS.COMPLETED) {
+      // Auto-generate Invoice for completed Service Request
+      try {
+        await InvoiceServices.createInvoiceFromServiceRequest(result._id);
+      } catch (err) {
+        console.error("Failed to auto-generate invoice on completion:", err);
+      }
+
       // Notify Property Manager
       await NotificationService.insertNotification({
         receiver: new Types.ObjectId(managerId),
         title: "Service Request Completed",
-        message: `Service request ${result.requestNo} ("${result.issueTitle}") has been completed by the service provider.`,
+        message: `Service request ${result.requestNo} ("${result.issueTitle}") has been completed by the service provider. An invoice has been generated.`,
         referenceId: result._id,
         screen: "SERVICE_REQUEST",
         type: "USER",
@@ -286,7 +294,7 @@ const updateStatus = async (id: string, userId: string, role: string, status: RE
         await NotificationService.insertNotification({
           receiver: admin._id,
           title: "Service Request Completed",
-          message: `Service request ${result.requestNo} has been marked as completed.`,
+          message: `Service request ${result.requestNo} has been marked as completed and invoice generated.`,
           referenceId: result._id,
           screen: "SERVICE_REQUEST",
           type: "ADMIN",
