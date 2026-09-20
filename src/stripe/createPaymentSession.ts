@@ -4,7 +4,6 @@ import config from "../config";
 
 export const createPaymentSession = async (user: JwtPayload, amount: number, referenceId: string) => {
     const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
         line_items: [{
             price_data: {
                 currency: 'gbp',

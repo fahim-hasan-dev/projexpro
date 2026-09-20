@@ -1,156 +1,182 @@
 import config from '../config'
 import { ICreateAccount, IResetPassword } from '../interfaces/emailTemplate'
 
+const LOGO_URL = 'https://i.ibb.co/Kj6XQH2W/logo.webp'
+
 const createAccount = (values: ICreateAccount) => {
-  console.log(values, 'values')
-  const data = {
+  return {
     to: values.email,
-    subject: `Verify your Template account, ${values.name}`,
+    subject: `Verify Your Account - ProjexPro`,
     html: `
-<body style="margin:0; padding:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0"
-         style="max-width:640px; margin:40px auto; background-color:#ffffff; border-radius:14px;
-                overflow:hidden; box-shadow:0 5px 25px rgba(0,0,0,0.08);">
-    
-    <!-- Body -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your ProjexPro Account</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F4F7FC; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F7FC; padding:40px 15px;">
     <tr>
-      <td style="padding:45px;">
-        <h1 style="color:#0096FF; font-size:26px; font-weight:700; margin-bottom:15px; text-align:center;">
-          Verify Your Email ✨
-        </h1>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(15,82,186,0.08); border:1px solid #E2E8F0;">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background: linear-gradient(135deg, #0F52BA 0%, #0066FF 100%); padding:32px 20px;">
+              <img src="${LOGO_URL}" alt="ProjexPro Logo" style="max-height:55px; width:auto; display:block;" />
+            </td>
+          </tr>
 
-        <p style="color:#003060; font-size:16px; line-height:1.6; margin-bottom:25px; text-align:center;">
-          Hey <strong>${values.name}</strong>, welcome to <strong>Template</strong>! 🎉<br>
-          Please verify your email to activate your account.
-        </p>
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 35px; color:#1E293B;">
+              <h1 style="color:#0F52BA; font-size:24px; font-weight:700; margin:0 0 16px 0; text-align:center;">
+                Welcome to ProjexPro! 👋
+              </h1>
 
-        <!-- OTP Box -->
-        <div style="background:linear-gradient(145deg,#EAF4FF,#D7E9FF); border:2px solid #0096FF; 
-                    border-radius:12px; padding:25px 0; text-align:center; margin:30px auto; max-width:300px;">
-          <span style="font-size:40px; font-weight:700; color:#003060; letter-spacing:6px;">
-            ${values.otp}
-          </span>
-        </div>
+              <p style="color:#475569; font-size:15px; line-height:1.6; margin:0 0 24px 0; text-align:center;">
+                Hi <strong>${values.name}</strong>,<br>
+                Thank you for registering with <strong>ProjexPro</strong>. Please verify your email address to complete your account setup and access your dashboard.
+              </p>
 
-        <p style="color:#003060; font-size:15px; line-height:1.6; text-align:center;">
-          This code will expire in <strong>5 minutes</strong>.<br>
-          If you didn’t request this, you can safely ignore this email.
-        </p>
+              <!-- OTP Box -->
+              <div style="background: linear-gradient(135deg, #EBF3FE 0%, #DBEAFE 100%); border: 2px dashed #0066FF; border-radius: 12px; padding: 22px 0; text-align: center; margin: 28px auto; max-width: 320px;">
+                <div style="font-size: 12px; font-weight: 700; color: #0066FF; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">
+                  Verification Code
+                </div>
+                <span style="font-size: 38px; font-weight: 800; color: #0F52BA; letter-spacing: 8px; font-family: monospace;">
+                  ${values.otp}
+                </span>
+              </div>
 
-        <!-- Tip -->
-        <div style="margin-top:35px; background-color:#fff8e1; border-left:6px solid #ffd54f; 
-                    border-radius:8px; padding:15px 18px;">
-          <p style="margin:0; color:#4a4a4a; font-size:14px;">
-            🔒 For security reasons, never share this code with anyone.
-          </p>
-        </div>
+              <p style="color:#64748B; font-size:14px; line-height:1.5; text-align:center; margin:0 0 24px 0;">
+                This code is valid for <strong>5 minutes</strong>.<br>
+                If you did not request account registration, please disregard this email.
+              </p>
 
-        <!-- Button -->
-        <div style="text-align:center; margin-top:45px;">
-          <a href="${config.frontend_url}/otp-verify" 
-             style="background-color:#0096FF; color:#ffffff; padding:14px 32px; font-size:16px; 
-                    font-weight:600; border-radius:10px; text-decoration:none; display:inline-block; 
-                    box-shadow:0 4px 12px rgba(0,150,255,0.3); transition:all 0.3s;">
-            Open App 🚀
-          </a>
-        </div>
+              <!-- Notice -->
+              <div style="background-color:#FEF3C7; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin-bottom:30px;">
+                <p style="margin:0; color:#92400E; font-size:13px; line-height:1.5;">
+                  🔒 <strong>Security Notice:</strong> Never share this OTP with anyone. ProjexPro representatives will never ask for your verification code.
+                </p>
+              </div>
+
+              <!-- Button -->
+              <div style="text-align:center;">
+                <a href="${config.frontend_url}/otp-verify" 
+                   style="background: linear-gradient(135deg, #0F52BA 0%, #0066FF 100%); color:#ffffff; padding:14px 32px; font-size:15px; font-weight:600; border-radius:10px; text-decoration:none; display:inline-block; box-shadow:0 4px 14px rgba(0,102,255,0.3);">
+                  Verify Account 🚀
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color:#F8FAFC; padding:24px 20px; border-top:1px solid #E2E8F0; color:#64748B; font-size:13px;">
+              <p style="margin:0; font-weight:600; color:#1E293B;">ProjexPro Management System</p>
+              <p style="margin:4px 0 0; color:#64748B;">© ${new Date().getFullYear()} ProjexPro. All rights reserved.</p>
+              <p style="margin:6px 0 0; font-size:12px; color:#94A3B8;">This is an automated notification. Please do not reply directly.</p>
+            </td>
+          </tr>
+
+        </table>
       </td>
     </tr>
-
-    <!-- Footer -->
-    <tr>
-      <td align="center" style="background:linear-gradient(135deg,#F5FAFF,#E6F0FF); padding:25px 20px; border-top:1px solid #0096FF33;">
-        <p style="margin:0; color:#003060; font-size:13px;">
-          © ${new Date().getFullYear()} <strong>Template</strong>. All rights reserved.
-        </p>
-        <p style="margin:6px 0 0; color:#003060; font-size:13px;">
-          Powered by <strong style="color:#0096FF;">Template API</strong> ✨
-        </p>
-      </td>
-    </tr>
-
   </table>
 </body>
+</html>
     `,
   }
-  return data
 }
 
 const resetPassword = (values: IResetPassword) => {
-  console.log(values, 'values')
-  const data = {
+  return {
     to: values.email,
-    subject: `Reset your App password, ${values.name}`,
+    subject: `Reset Your Password - ProjexPro`,
     html: `
-<body style="margin:0; padding:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0"
-         style="max-width:640px; margin:40px auto; background-color:#ffffff; border-radius:14px;
-                overflow:hidden; box-shadow:0 5px 25px rgba(0,0,0,0.08);">
-    
-    <!-- Body -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Your ProjexPro Password</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F4F7FC; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F7FC; padding:40px 15px;">
     <tr>
-      <td style="padding:45px;">
-        <h1 style="color:#0096FF; font-size:26px; font-weight:700; margin-bottom:15px; text-align:center;">
-          Password Reset Request 🔐
-        </h1>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(15,82,186,0.08); border:1px solid #E2E8F0;">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background: linear-gradient(135deg, #0F52BA 0%, #0066FF 100%); padding:32px 20px;">
+              <img src="${LOGO_URL}" alt="ProjexPro Logo" style="max-height:55px; width:auto; display:block;" />
+            </td>
+          </tr>
 
-        <p style="color:#003060; font-size:16px; line-height:1.6; margin-bottom:25px; text-align:center;">
-          Hi <strong>${values.name}</strong>, 👋<br>
-          We received a request to reset your password for your <strong>App</strong> account.
-          <br>Enter the code below to complete the process:
-        </p>
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 35px; color:#1E293B;">
+              <h1 style="color:#0F52BA; font-size:24px; font-weight:700; margin:0 0 16px 0; text-align:center;">
+                Password Reset Request 🔐
+              </h1>
 
-        <!-- OTP Box -->
-        <div style="background:linear-gradient(145deg,#EAF4FF,#D7E9FF); border:2px solid #0096FF;
-                    border-radius:12px; padding:25px 0; text-align:center; margin:30px auto; max-width:300px;">
-          <span style="font-size:40px; font-weight:700; color:#003060; letter-spacing:6px;">
-            ${values.otp}
-          </span>
-        </div>
+              <p style="color:#475569; font-size:15px; line-height:1.6; margin:0 0 24px 0; text-align:center;">
+                Hi <strong>${values.name}</strong>,<br>
+                We received a request to reset the password for your <strong>ProjexPro</strong> account. Use the code below to complete the reset process:
+              </p>
 
-        <p style="color:#003060; font-size:15px; line-height:1.6; text-align:center;">
-          This verification code is valid for <strong>5 minutes</strong>.<br>
-          If you didn’t request this, please ignore this email — your account is safe.
-        </p>
+              <!-- OTP Box -->
+              <div style="background: linear-gradient(135deg, #EBF3FE 0%, #DBEAFE 100%); border: 2px dashed #0066FF; border-radius: 12px; padding: 22px 0; text-align: center; margin: 28px auto; max-width: 320px;">
+                <div style="font-size: 12px; font-weight: 700; color: #0066FF; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">
+                  Reset Passcode
+                </div>
+                <span style="font-size: 38px; font-weight: 800; color: #0F52BA; letter-spacing: 8px; font-family: monospace;">
+                  ${values.otp}
+                </span>
+              </div>
 
-        <!-- Tip -->
-        <div style="margin-top:35px; background-color:#fff8e1; border-left:6px solid #ffd54f;
-                    border-radius:8px; padding:15px 18px;">
-          <p style="margin:0; color:#4a4a4a; font-size:14px;">
-            ⚠️ <strong>Security Tip:</strong> Never share your reset code with anyone. App will never ask for it.
-          </p>
-        </div>
+              <p style="color:#64748B; font-size:14px; line-height:1.5; text-align:center; margin:0 0 24px 0;">
+                This code is valid for <strong>5 minutes</strong>.<br>
+                If you did not request a password reset, you can safely ignore this email.
+              </p>
 
-        <!-- Button -->
-        <div style="text-align:center; margin-top:45px;">
-          <a href="${config.frontend_url}/otp-verify" target="_blank"
-             style="background-color:#0096FF; color:#ffffff; padding:14px 32px; font-size:16px;
-                    font-weight:600; border-radius:10px; text-decoration:none; display:inline-block;
-                    box-shadow:0 4px 12px rgba(0,150,255,0.3); transition:all 0.3s;">
-            🔑 Reset Password
-          </a>
-        </div>
+              <!-- Security Tip -->
+              <div style="background-color:#FEF3C7; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin-bottom:30px;">
+                <p style="margin:0; color:#92400E; font-size:13px; line-height:1.5;">
+                  ⚠️ <strong>Security Tip:</strong> Never share your passcode with anyone. ProjexPro will never ask for your reset code.
+                </p>
+              </div>
+
+              <!-- Button -->
+              <div style="text-align:center;">
+                <a href="${config.frontend_url}/otp-verify" 
+                   style="background: linear-gradient(135deg, #0F52BA 0%, #0066FF 100%); color:#ffffff; padding:14px 32px; font-size:15px; font-weight:600; border-radius:10px; text-decoration:none; display:inline-block; box-shadow:0 4px 14px rgba(0,102,255,0.3);">
+                  Reset Password 🔑
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color:#F8FAFC; padding:24px 20px; border-top:1px solid #E2E8F0; color:#64748B; font-size:13px;">
+              <p style="margin:0; font-weight:600; color:#1E293B;">ProjexPro Management System</p>
+              <p style="margin:4px 0 0; color:#64748B;">© ${new Date().getFullYear()} ProjexPro. All rights reserved.</p>
+              <p style="margin:6px 0 0; font-size:12px; color:#94A3B8;">This is an automated notification. Please do not reply directly.</p>
+            </td>
+          </tr>
+
+        </table>
       </td>
     </tr>
-
-    <!-- Footer -->
-    <tr>
-      <td align="center" style="background:linear-gradient(135deg,#F5FAFF,#E6F0FF); padding:25px 20px; border-top:1px solid #0096FF33;">
-        <p style="margin:0; color:#003060; font-size:13px;">
-          © ${new Date().getFullYear()} <strong>Template</strong>. All rights reserved.
-        </p>
-        <p style="margin:6px 0 0; color:#003060; font-size:13px;">
-          Powered by <strong style="color:#0096FF;">Template API</strong> ✨
-        </p>
-      </td>
-    </tr>
-
   </table>
 </body>
+</html>
     `,
   }
-
-  return data
 }
 
 const resendOtp = (values: {
@@ -159,90 +185,96 @@ const resendOtp = (values: {
   otp: string
   type: 'resetPassword' | 'createAccount'
 }) => {
-  console.log(values, 'values')
   const isReset = values.type === 'resetPassword'
 
-  const data = {
+  return {
     to: values.email,
-    subject: `${isReset ? 'Password Reset' : 'Account Verification'} - New Code`,
+    subject: `${isReset ? 'Password Reset Code' : 'Verification Code'} - ProjexPro`,
     html: `
-   <body style="margin:0; padding:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0"
-         style="max-width:640px; margin:40px auto; background:#ffffff; border-radius:14px;
-                overflow:hidden; box-shadow:0 5px 25px rgba(0,0,0,0.08);">
-
-    <!-- Body -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${isReset ? 'Reset Your Password' : 'Verify Your Account'} - ProjexPro</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F4F7FC; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F7FC; padding:40px 15px;">
     <tr>
-      <td style="padding:45px;">
-        <h1 style="color:#1b4332; font-size:26px; font-weight:700; margin-bottom:15px; text-align:center;">
-          ${isReset ? 'Reset Your Password 🔐' : 'Verify Your Account 🚀'}
-        </h1>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(15,82,186,0.08); border:1px solid #E2E8F0;">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background: linear-gradient(135deg, #0F52BA 0%, #0066FF 100%); padding:32px 20px;">
+              <img src="${LOGO_URL}" alt="ProjexPro Logo" style="max-height:55px; width:auto; display:block;" />
+            </td>
+          </tr>
 
-        <p style="color:#3a5a40; font-size:16px; line-height:1.6; margin-bottom:25px; text-align:center;">
-          Hi <strong>${values.name}</strong>, 👋<br>
-          ${isReset
-            ? 'You requested a new verification code to reset your Template password.'
-            : 'Here is your new verification code to complete your Template account setup.'
-          }<br>
-          Use the code below to continue:
-        </p>
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 35px; color:#1E293B;">
+              <h1 style="color:#0F52BA; font-size:24px; font-weight:700; margin:0 0 16px 0; text-align:center;">
+                ${isReset ? 'Reset Your Password 🔐' : 'Verify Your Account 🚀'}
+              </h1>
 
-        <!-- OTP Box -->
-        <div style="background:linear-gradient(145deg,#d8f3dc,#b7e4c7);
-                    border:2px solid #52b788; border-radius:12px;
-                    padding:25px 0; text-align:center;
-                    margin:30px auto; max-width:300px;">
-          <span style="font-size:40px; font-weight:700; color:#1b4332; letter-spacing:6px;">
-            ${values.otp}
-          </span>
-        </div>
+              <p style="color:#475569; font-size:15px; line-height:1.6; margin:0 0 24px 0; text-align:center;">
+                Hi <strong>${values.name}</strong>,<br>
+                ${isReset
+                  ? 'Here is your new verification code to reset your ProjexPro password.'
+                  : 'Here is your new verification code to complete your ProjexPro account setup.'
+                }
+              </p>
 
-        <p style="color:#3a5a40; font-size:15px; line-height:1.6; text-align:center;">
-          This code is valid for <strong>5 minutes</strong>.<br>
-          If this was not you, please ignore the email.
-        </p>
+              <!-- OTP Box -->
+              <div style="background: linear-gradient(135deg, #EBF3FE 0%, #DBEAFE 100%); border: 2px dashed #0066FF; border-radius: 12px; padding: 22px 0; text-align: center; margin: 28px auto; max-width: 320px;">
+                <div style="font-size: 12px; font-weight: 700; color: #0066FF; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">
+                  New Verification Code
+                </div>
+                <span style="font-size: 38px; font-weight: 800; color: #0F52BA; letter-spacing: 8px; font-family: monospace;">
+                  ${values.otp}
+                </span>
+              </div>
 
-        <!-- Tip -->
-        <div style="margin-top:35px; background-color:#fff8e1;
-                    border-left:6px solid #ffd54f;
-                    border-radius:8px; padding:15px 18px;">
-          <p style="margin:0; color:#4a4a4a; font-size:14px;">
-            🔒 <strong>Security Tip:</strong> Never share your OTP with anyone. Template
- will never request it.
-          </p>
-        </div>
+              <p style="color:#64748B; font-size:14px; line-height:1.5; text-align:center; margin:0 0 24px 0;">
+                This code is valid for <strong>5 minutes</strong>.<br>
+                If you did not request this, please ignore this email.
+              </p>
 
-        <!-- Button -->
-        <div style="text-align:center; margin-top:45px;">
-          <a href="${config.frontend_url}/otp-verify"
-             style="background-color:#2d6a4f; color:#ffffff; padding:14px 32px;
-                    font-size:16px; font-weight:600; border-radius:10px;
-                    text-decoration:none; display:inline-block;
-                    box-shadow:0 4px 12px rgba(45,106,79,0.3);">
-            ${isReset ? 'Reset Password' : 'Verify Account'}
-          </a>
-        </div>
+              <!-- Security Notice -->
+              <div style="background-color:#FEF3C7; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin-bottom:30px;">
+                <p style="margin:0; color:#92400E; font-size:13px; line-height:1.5;">
+                  🔒 <strong>Security Notice:</strong> Never share your verification code with anyone.
+                </p>
+              </div>
+
+              <!-- Button -->
+              <div style="text-align:center;">
+                <a href="${config.frontend_url}/otp-verify" 
+                   style="background: linear-gradient(135deg, #0F52BA 0%, #0066FF 100%); color:#ffffff; padding:14px 32px; font-size:15px; font-weight:600; border-radius:10px; text-decoration:none; display:inline-block; box-shadow:0 4px 14px rgba(0,102,255,0.3);">
+                  ${isReset ? 'Reset Password' : 'Verify Account'}
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color:#F8FAFC; padding:24px 20px; border-top:1px solid #E2E8F0; color:#64748B; font-size:13px;">
+              <p style="margin:0; font-weight:600; color:#1E293B;">ProjexPro Management System</p>
+              <p style="margin:4px 0 0; color:#64748B;">© ${new Date().getFullYear()} ProjexPro. All rights reserved.</p>
+              <p style="margin:6px 0 0; font-size:12px; color:#94A3B8;">This is an automated notification. Please do not reply directly.</p>
+            </td>
+          </tr>
+
+        </table>
       </td>
     </tr>
-
-    <!-- Footer -->
-    <tr>
-      <td align="center" style="background-color:#f1f8f4; padding:25px 20px; border-top:1px solid #e6f4ea;">
-        <p style="margin:0; color:#52796f; font-size:13px;">
-          © ${new Date().getFullYear()} <strong>Template</strong>. All rights reserved.
-        </p>
-        <p style="margin:6px 0 0; color:#3a5a40; font-size:13px;">
-          Powered by <strong style="color:#1b4332;">Template API</strong> 🚀
-        </p>
-      </td>
-    </tr>
-
   </table>
 </body>
+</html>
     `,
   }
-
-  return data
 }
 
 const adminContactNotificationEmail = (payload: {
@@ -253,77 +285,83 @@ const adminContactNotificationEmail = (payload: {
 }) => {
   return {
     to: config.super_admin.email as string,
-    subject: '📩 New Contact Form Submission – App',
+    subject: `📩 New Contact Form Submission – ProjexPro`,
     html: `
-<body style="margin:0; padding:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0"
-         style="max-width:640px; margin:40px auto; background-color:#ffffff; border-radius:14px;
-                overflow:hidden; box-shadow:0 5px 25px rgba(0,0,0,0.08);">
-
-    <!-- Body -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Contact Submission</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F4F7FC; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F7FC; padding:40px 15px;">
     <tr>
-      <td style="padding:45px;">
-        <h1 style="color:#0096FF; font-size:26px; font-weight:700; margin-bottom:20px; text-align:center;">
-          📬 New Contact Submission
-        </h1>
-
-        <p style="color:#003060; font-size:16px; text-align:center; margin-bottom:30px;">
-          A new contact message has been submitted on <strong>App</strong>.
-        </p>
-
-        <!-- Contact Details -->
-        <table style="width:100%; border-collapse:collapse; margin:20px 0;">
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(15,82,186,0.08); border:1px solid #E2E8F0;">
+          
+          <!-- Header -->
           <tr>
-            <td style="padding:12px 0; font-size:15px; color:#003060;">👤 <strong>Name:</strong></td>
-            <td style="padding:12px 0; font-size:15px; color:#003060; text-align:right;">
-              ${payload.name}
+            <td align="center" style="background: linear-gradient(135deg, #0F52BA 0%, #0066FF 100%); padding:32px 20px;">
+              <img src="${LOGO_URL}" alt="ProjexPro Logo" style="max-height:55px; width:auto; display:block;" />
             </td>
           </tr>
 
-          <tr style="border-top:1px solid #0096FF22;">
-            <td style="padding:12px 0; font-size:15px; color:#003060;">📧 <strong>Email:</strong></td>
-            <td style="padding:12px 0; font-size:15px; color:#003060; text-align:right;">
-              ${payload.email}
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 35px; color:#1E293B;">
+              <h1 style="color:#0F52BA; font-size:24px; font-weight:700; margin:0 0 16px 0; text-align:center;">
+                📬 New Contact Submission
+              </h1>
+
+              <p style="color:#475569; font-size:15px; line-height:1.6; margin:0 0 24px 0; text-align:center;">
+                A new inquiry has been submitted through the <strong>ProjexPro</strong> contact form.
+              </p>
+
+              <!-- Table -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:24px; background:#F8FAFC; border-radius:12px; overflow:hidden; border:1px solid #E2E8F0;">
+                <tr>
+                  <td style="padding:14px 18px; font-size:14px; color:#64748B; font-weight:600; border-bottom:1px solid #E2E8F0;">👤 Name</td>
+                  <td style="padding:14px 18px; font-size:14px; color:#1E293B; font-weight:600; text-align:right; border-bottom:1px solid #E2E8F0;">${payload.name}</td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 18px; font-size:14px; color:#64748B; font-weight:600; border-bottom:1px solid #E2E8F0;">📧 Email</td>
+                  <td style="padding:14px 18px; font-size:14px; color:#0F52BA; font-weight:600; text-align:right; border-bottom:1px solid #E2E8F0;">${payload.email}</td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 18px; font-size:14px; color:#64748B; font-weight:600;">📞 Phone</td>
+                  <td style="padding:14px 18px; font-size:14px; color:#1E293B; font-weight:600; text-align:right;">${payload.phone || 'N/A'}</td>
+                </tr>
+              </table>
+
+              <!-- Message Box -->
+              <div style="background: #EBF3FE; border: 1px solid #93C5FD; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                <div style="font-size: 12px; font-weight: 700; color: #0F52BA; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">User Message</div>
+                <p style="margin:0; font-size:14px; color:#1E293B; line-height:1.6; font-style:italic;">
+                  “${payload.message}”
+                </p>
+              </div>
+
+              <p style="color:#64748B; font-size:13px; text-align:center; margin:0;">
+                You can respond directly by replying to <strong>${payload.email}</strong>.
+              </p>
             </td>
           </tr>
 
-          <tr style="border-top:1px solid #0096FF22;">
-            <td style="padding:12px 0; font-size:15px; color:#003060;">📞 <strong>Phone:</strong></td>
-            <td style="padding:12px 0; font-size:15px; color:#003060; text-align:right;">
-              ${payload.phone || 'N/A'}
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color:#F8FAFC; padding:24px 20px; border-top:1px solid #E2E8F0; color:#64748B; font-size:13px;">
+              <p style="margin:0; font-weight:600; color:#1E293B;">ProjexPro Management System</p>
+              <p style="margin:4px 0 0; color:#64748B;">© ${new Date().getFullYear()} ProjexPro. All rights reserved.</p>
             </td>
           </tr>
+
         </table>
-
-        <!-- Message Box -->
-        <div style="background:linear-gradient(145deg,#EAF4FF,#D7E9FF); border:2px solid #0096FF;
-                    border-radius:12px; padding:20px; margin-top:30px;">
-          <p style="margin:0; font-size:15px; color:#003060; line-height:1.6;">
-            “${payload.message}”
-          </p>
-        </div>
-
-        <p style="color:#003060; font-size:14px; margin-top:30px; text-align:center;">
-          You can respond directly to <strong>${payload.email}</strong>.
-        </p>
       </td>
     </tr>
-
-    <!-- Footer -->
-    <tr>
-      <td align="center" 
-          style="background:linear-gradient(135deg,#F5FAFF,#E6F0FF); padding:25px 20px; border-top:1px solid #0096FF33;">
-        <p style="margin:0; color:#003060; font-size:13px;">
-          © ${new Date().getFullYear()} <strong>App</strong>. All rights reserved.
-        </p>
-        <p style="margin:6px 0 0; color:#003060; font-size:13px;">
-          Powered by <strong style="color:#0096FF;">App API</strong> 
-        </p>
-      </td>
-    </tr>
-
   </table>
 </body>
+</html>
     `,
   }
 }
@@ -335,97 +373,155 @@ const userContactConfirmationEmail = (payload: {
 }) => {
   return {
     to: payload.email,
-    subject: '💬 Thank You for Contacting App',
+    subject: `💬 Thank You for Contacting ProjexPro`,
     html: `
-<body style="margin:0; padding:0; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0"
-         style="max-width:640px; margin:40px auto; background-color:#ffffff; border-radius:14px;
-                overflow:hidden; box-shadow:0 5px 25px rgba(0,0,0,0.08);">
-
-    <!-- Body -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thank You for Contacting ProjexPro</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F4F7FC; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F7FC; padding:40px 15px;">
     <tr>
-      <td style="padding:45px;">
-        <h1 style="color:#0096FF; font-size:26px; font-weight:700; margin-bottom:20px; text-align:center;">
-          Thank You for Contacting Us 💙
-        </h1>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(15,82,186,0.08); border:1px solid #E2E8F0;">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background: linear-gradient(135deg, #0F52BA 0%, #0066FF 100%); padding:32px 20px;">
+              <img src="${LOGO_URL}" alt="ProjexPro Logo" style="max-height:55px; width:auto; display:block;" />
+            </td>
+          </tr>
 
-        <p style="color:#003060; font-size:16px; line-height:1.6; text-align:center;">
-          Dear <strong>${payload.name}</strong>,<br>
-          We’ve received your message! Our support team will reach out to you shortly.
-        </p>
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 35px; color:#1E293B;">
+              <h1 style="color:#0F52BA; font-size:24px; font-weight:700; margin:0 0 16px 0; text-align:center;">
+                Thank You for Contacting Us 💙
+              </h1>
 
-        <!-- User Message -->
-        <div style="background:linear-gradient(145deg,#EAF4FF,#D7E9FF); border:2px solid #0096FF; 
-                    border-radius:12px; padding:25px 20px; text-align:center; margin:30px auto; max-width:500px;">
-          <p style="font-size:15px; color:#003060; line-height:1.6; margin:0;">
-            <em>“${payload.message}”</em>
-          </p>
-        </div>
+              <p style="color:#475569; font-size:15px; line-height:1.6; margin:0 0 24px 0; text-align:center;">
+                Dear <strong>${payload.name}</strong>,<br>
+                We have received your message! A member of the <strong>ProjexPro</strong> team will review your request and get back to you shortly.
+              </p>
 
-        <p style="color:#003060; font-size:15px; line-height:1.6; text-align:center;">
-          Thanks for reaching out to <strong>App</strong>.<br>
-          We truly appreciate your message 💙
-        </p>
+              <!-- Message Copy -->
+              <div style="background: #EBF3FE; border: 1px solid #93C5FD; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                <div style="font-size: 12px; font-weight: 700; color: #0F52BA; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Summary of Your Message</div>
+                <p style="margin:0; font-size:14px; color:#1E293B; line-height:1.6; font-style:italic;">
+                  “${payload.message}”
+                </p>
+              </div>
 
-        <!-- Button -->
-        <div style="text-align:center; margin-top:40px;">
-          <a href="${config.frontend_url}"
-             style="background-color:#0096FF; color:#ffffff; padding:14px 32px; font-size:16px; 
-                    font-weight:600; border-radius:10px; text-decoration:none; display:inline-block; 
-                    box-shadow:0 4px 12px rgba(0,150,255,0.3); transition:all 0.3s;">
-            Open App 
-          </a>
-        </div>
+              <!-- Button -->
+              <div style="text-align:center; margin-top:30px;">
+                <a href="${config.frontend_url}" 
+                   style="background: linear-gradient(135deg, #0F52BA 0%, #0066FF 100%); color:#ffffff; padding:14px 32px; font-size:15px; font-weight:600; border-radius:10px; text-decoration:none; display:inline-block; box-shadow:0 4px 14px rgba(0,102,255,0.3);">
+                  Visit ProjexPro
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color:#F8FAFC; padding:24px 20px; border-top:1px solid #E2E8F0; color:#64748B; font-size:13px;">
+              <p style="margin:0; font-weight:600; color:#1E293B;">ProjexPro Management System</p>
+              <p style="margin:4px 0 0; color:#64748B;">© ${new Date().getFullYear()} ProjexPro. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
       </td>
     </tr>
-
-    <!-- Footer -->
-    <tr>
-      <td align="center" 
-          style="background:linear-gradient(135deg,#F5FAFF,#E6F0FF); padding:25px 20px; border-top:1px solid #0096FF33;">
-        <p style="margin:0; color:#003060; font-size:13px;">
-          © ${new Date().getFullYear()} <strong>Template</strong>. All rights reserved.
-        </p>
-        <p style="margin:6px 0 0; color:#003060; font-size:13px;">
-          Powered by <strong style="color:#0096FF;">Template API</strong> ✨
-        </p>
-      </td>
-    </tr>
-
   </table>
 </body>
+</html>
     `,
   }
 }
 
 const subscriptionActivatedEmail = (data: any) => {
+  const userName = data.user.firstName || data.user.name || 'Valued Customer'
   return {
     to: data.user.email,
-    subject: `✅ Subscription Activated – Welcome to App`,
+    subject: `🎉 Subscription Activated – ProjexPro`,
     html: `
-<body style="margin:0;padding:0;font-family:Inter,Segoe UI,sans-serif;background:#f7f9fc;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;margin:30px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,0.06);">
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscription Activated - ProjexPro</title>
+</head>
+<body style="margin:0; padding:0; background-color:#F4F7FC; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing:antialiased;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F4F7FC; padding:40px 15px;">
     <tr>
-      <td align="center" style="background:#EAF4FF;padding:25px 20px;">
-        <h2 style="margin:0;color:#0077DD;font-size:20px;">Subscription Activated!</h2>
-      </td>
-    </tr>
-    <tr>
-      <td style="padding:25px 20px;">
-        <p style="font-size:14px;color:#000;line-height:1.5;">
-          Hello <strong>${data.user.firstName}</strong>,<br>
-          Your subscription for <strong>${data.plan.title}</strong> has been successfully activated.
-        </p>
-        <p style="font-size:13px;margin:2px 0;"><strong>Amount Paid:</strong> £${data.amountPaid}</p>
-        <p style="font-size:13px;margin:2px 0;"><strong>Transaction ID:</strong> ${data.trxId}</p>
-        <div style="text-align:center;margin-top:20px;">
-          <a href="${config.frontend_url}/dashboard" style="background:#0077DD;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-size:14px;display:inline-block;">Go to Dashboard</a>
-        </div>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 10px 30px rgba(15,82,186,0.08); border:1px solid #E2E8F0;">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background: linear-gradient(135deg, #0F52BA 0%, #0066FF 100%); padding:32px 20px;">
+              <img src="${LOGO_URL}" alt="ProjexPro Logo" style="max-height:55px; width:auto; display:block;" />
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 35px; color:#1E293B;">
+              <h1 style="color:#0F52BA; font-size:24px; font-weight:700; margin:0 0 16px 0; text-align:center;">
+                Subscription Activated! 🎉
+              </h1>
+
+              <p style="color:#475569; font-size:15px; line-height:1.6; margin:0 0 24px 0; text-align:center;">
+                Hello <strong>${userName}</strong>,<br>
+                Your subscription for <strong>${data.plan.title}</strong> has been successfully activated on <strong>ProjexPro</strong>.
+              </p>
+
+              <!-- Payment Details Table -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse; margin-bottom:24px; background:#F8FAFC; border-radius:12px; overflow:hidden; border:1px solid #E2E8F0;">
+                <tr>
+                  <td style="padding:14px 18px; font-size:14px; color:#64748B; font-weight:600; border-bottom:1px solid #E2E8F0;">Plan Title</td>
+                  <td style="padding:14px 18px; font-size:14px; color:#1E293B; font-weight:600; text-align:right; border-bottom:1px solid #E2E8F0;">${data.plan.title}</td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 18px; font-size:14px; color:#64748B; font-weight:600; border-bottom:1px solid #E2E8F0;">Amount Paid</td>
+                  <td style="padding:14px 18px; font-size:14px; color:#0F52BA; font-weight:700; text-align:right; border-bottom:1px solid #E2E8F0;">£${data.amountPaid}</td>
+                </tr>
+                <tr>
+                  <td style="padding:14px 18px; font-size:14px; color:#64748B; font-weight:600;">Transaction ID</td>
+                  <td style="padding:14px 18px; font-size:13px; color:#475569; font-family:monospace; text-align:right;">${data.trxId}</td>
+                </tr>
+              </table>
+
+              <!-- Button -->
+              <div style="text-align:center; margin-top:30px;">
+                <a href="${config.frontend_url}/dashboard" 
+                   style="background: linear-gradient(135deg, #0F52BA 0%, #0066FF 100%); color:#ffffff; padding:14px 32px; font-size:15px; font-weight:600; border-radius:10px; text-decoration:none; display:inline-block; box-shadow:0 4px 14px rgba(0,102,255,0.3);">
+                  Go to Dashboard 🚀
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="background-color:#F8FAFC; padding:24px 20px; border-top:1px solid #E2E8F0; color:#64748B; font-size:13px;">
+              <p style="margin:0; font-weight:600; color:#1E293B;">ProjexPro Management System</p>
+              <p style="margin:4px 0 0; color:#64748B;">© ${new Date().getFullYear()} ProjexPro. All rights reserved.</p>
+            </td>
+          </tr>
+
+        </table>
       </td>
     </tr>
   </table>
 </body>
-`,
+</html>
+    `,
   }
 }
 

@@ -1,11 +1,13 @@
 import { StatusCodes } from "http-status-codes";
+import { Types } from "mongoose";
 import ApiError from "../../../errors/ApiError";
 import QueryBuilder from "../../builder/QueryBuilder";
 import { IServiceRequest, REQUEST_STATUS, SPECIALIZED_PAYMENT_TYPE } from "./serviceRequest.interface";
 import { ServiceRequestModel } from "./serviceRequest.model";
 import { PropertyModel } from "../property/property.model";
 import { User } from "../user/user.model";
-import { USER_ROLES } from "../../../enum/user";
+import { USER_ROLES, ADMIN_ROLES } from "../../../enum/user";
+import { NotificationService } from "../notification/notification.service";
 
 // Create Service Request (Property Manager)
 const createServiceRequest = async (userId: string, payload: IServiceRequest) => {
@@ -24,6 +26,24 @@ const createServiceRequest = async (userId: string, payload: IServiceRequest) =>
   payload.status = REQUEST_STATUS.PENDING;
 
   const result = await ServiceRequestModel.create(payload);
+
+  // Notify all admins about the new service request
+  try {
+    const admins = await User.find({ role: { $in: [ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN] } });
+    for (const admin of admins) {
+      await NotificationService.insertNotification({
+        receiver: admin._id,
+        title: "New Service Request",
+        message: `New service request ${result.requestNo} ("${result.issueTitle}") has been created.`,
+        referenceId: result._id,
+        screen: "SERVICE_REQUEST",
+        type: "ADMIN",
+      });
+    }
+  } catch (error) {
+    console.error("Failed to send notification on service request creation:", error);
+  }
+
   return result;
 };
 
@@ -103,6 +123,8 @@ const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>)
     throw new ApiError(StatusCodes.NOT_FOUND, "Service request not found");
   }
 
+  const previousProviderId = existingRequest.assignedProvider ? existingRequest.assignedProvider.toString() : null;
+
   // Validate provider if assigned
   if (payload.assignedProvider) {
     const provider = await User.findById(payload.assignedProvider);
@@ -153,6 +175,50 @@ const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>)
     .populate("user", "firstName lastName email contact profileImage")
     .populate("assignedProvider", "firstName lastName email contact profileImage serviceProviderProfile");
 
+  if (!result) return result;
+
+  try {
+    // Send notification to newly assigned Service Provider
+    if (payload.assignedProvider) {
+      const newProviderId = payload.assignedProvider.toString();
+      await NotificationService.insertNotification({
+        receiver: new Types.ObjectId(newProviderId),
+        title: "Service Request Assigned",
+        message: `You have been assigned to service request ${result.requestNo} ("${result.issueTitle}"). Total Payout: £${result.finalPayout || result.basePayment || 0}.`,
+        referenceId: result._id,
+        screen: "SERVICE_REQUEST",
+        type: "USER",
+      });
+
+      // If reassigned from an old provider to a new provider, notify old provider
+      if (previousProviderId && previousProviderId !== newProviderId) {
+        await NotificationService.insertNotification({
+          receiver: new Types.ObjectId(previousProviderId),
+          title: "Service Request Reassigned",
+          message: `Service request ${result.requestNo} has been reassigned to another service provider.`,
+          referenceId: result._id,
+          screen: "SERVICE_REQUEST",
+          type: "USER",
+        });
+      }
+    }
+
+    // Send notification to Property Manager (Request Owner)
+    if (result.user) {
+      const managerId = (result.user as any)._id ? (result.user as any)._id.toString() : result.user.toString();
+      await NotificationService.insertNotification({
+        receiver: new Types.ObjectId(managerId),
+        title: "Service Request Assigned & Price Set",
+        message: `Your service request ${result.requestNo} has been assigned to a service provider. Total charge: £${result.finalPayout || result.basePayment || 0}.`,
+        referenceId: result._id,
+        screen: "SERVICE_REQUEST",
+        type: "USER",
+      });
+    }
+  } catch (error) {
+    console.error("Failed to send notification on assignment:", error);
+  }
+
   return result;
 };
 
@@ -174,6 +240,62 @@ const updateStatus = async (id: string, userId: string, role: string, status: RE
     .populate("property")
     .populate("user", "firstName lastName email contact")
     .populate("assignedProvider", "firstName lastName email contact");
+
+  if (!result) return result;
+
+  try {
+    const managerId = (result.user as any)._id ? (result.user as any)._id.toString() : result.user.toString();
+
+    if (status === REQUEST_STATUS.IN_PROGRESS) {
+      // Notify Property Manager
+      await NotificationService.insertNotification({
+        receiver: new Types.ObjectId(managerId),
+        title: "Service Request In Progress",
+        message: `Work has started on service request ${result.requestNo} ("${result.issueTitle}").`,
+        referenceId: result._id,
+        screen: "SERVICE_REQUEST",
+        type: "USER",
+      });
+
+      // Notify Admins
+      const admins = await User.find({ role: { $in: [ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN] } });
+      for (const admin of admins) {
+        await NotificationService.insertNotification({
+          receiver: admin._id,
+          title: "Service Request In Progress",
+          message: `Service request ${result.requestNo} is now in progress.`,
+          referenceId: result._id,
+          screen: "SERVICE_REQUEST",
+          type: "ADMIN",
+        });
+      }
+    } else if (status === REQUEST_STATUS.COMPLETED) {
+      // Notify Property Manager
+      await NotificationService.insertNotification({
+        receiver: new Types.ObjectId(managerId),
+        title: "Service Request Completed",
+        message: `Service request ${result.requestNo} ("${result.issueTitle}") has been completed by the service provider.`,
+        referenceId: result._id,
+        screen: "SERVICE_REQUEST",
+        type: "USER",
+      });
+
+      // Notify Admins
+      const admins = await User.find({ role: { $in: [ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN] } });
+      for (const admin of admins) {
+        await NotificationService.insertNotification({
+          receiver: admin._id,
+          title: "Service Request Completed",
+          message: `Service request ${result.requestNo} has been marked as completed.`,
+          referenceId: result._id,
+          screen: "SERVICE_REQUEST",
+          type: "ADMIN",
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Failed to send notification on status update:", error);
+  }
 
   return result;
 };
