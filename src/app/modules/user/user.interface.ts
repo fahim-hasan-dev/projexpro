@@ -2,6 +2,27 @@ import { Model, Types } from "mongoose";
 import { USER_ROLES, USER_STATUS } from "../../../enum/user";
 export { USER_ROLES, USER_STATUS };
 
+export type IPropertyManagerProfile = {
+    // Contact Details (Step 2)
+    contactFullName?: string;
+    jobTitle?: string;
+    businessEmail?: string;
+    businessPhone?: string;
+
+    // Business Details (Step 3 & 4)
+    companyName?: string;
+    legalBusinessName?: string;
+    dbaTradeName?: string;
+    companyWebsiteUrl?: string;
+    businessAddress?: string;
+    city?: string;
+    state?: string;
+    taxId?: string;
+    portfolioSize?: '1-10 Units' | '11-50 Units' | '51-200 Units' | '201-500 Units' | '501+ Units' | string;
+    maintenanceInfrastructure?: string;
+    propertyTypes?: string[];
+};
+
 type IAuthentication = {
     restrictionLeftAt: Date | null
     resetPassword: boolean
@@ -27,6 +48,7 @@ export type IUser = {
     status: USER_STATUS;
     verified: boolean;
     role: USER_ROLES;
+    propertyManagerProfile?: IPropertyManagerProfile;
     authentication: IAuthentication;
     deviceToken?: string;
     fcmToken?: string;

@@ -2,7 +2,7 @@ import express from 'express'
 import { AuthController } from './auth.controller'
 import validateRequest from '../../middleware/validateRequest'
 import { AuthValidations } from './auth.validation'
-import { USER_ROLES } from '../../../enum/user'
+import { ADMIN_ROLES, USER_ROLES } from '../../../enum/user'
 import auth, { tempAuth } from '../../middleware/auth'
 import { UserValidations } from '../user/user.validation'
 import fileUploadHandler from '../../middleware/fileUploadHandler'
@@ -73,14 +73,14 @@ router.post(
 
 router.post(
   '/change-password',
-  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.PROPERTY_MANAGER, USER_ROLES.SERVICE_PROVIDER),
+  auth(USER_ROLES.PROPERTY_MANAGER, USER_ROLES.SERVICE_PROVIDER, ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN),
   validateRequest(AuthValidations.changePasswordZodSchema),
   AuthController.changePassword,
 )
 
 router.delete(
   '/delete-account',
-  auth(USER_ROLES.ADMIN, USER_ROLES.USER, USER_ROLES.PROPERTY_MANAGER, USER_ROLES.SERVICE_PROVIDER),
+  auth(USER_ROLES.PROPERTY_MANAGER, USER_ROLES.SERVICE_PROVIDER, ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN),
   validateRequest(AuthValidations.deleteAccount),
   AuthController.deleteAccount,
 )

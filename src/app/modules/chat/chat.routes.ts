@@ -1,14 +1,14 @@
 import express from 'express';
 import auth from '../../middleware/auth';
 import { ChatController } from './chat.controller';
-import { USER_ROLES } from '../../../enum/user';
+import { ADMIN_ROLES, USER_ROLES } from '../../../enum/user';
 
 const router = express.Router();
 
 // Create a regular chat between users
 router.post(
   "/",
-  auth(USER_ROLES.USER, USER_ROLES.ADMIN),
+  auth(USER_ROLES.PROPERTY_MANAGER, USER_ROLES.SERVICE_PROVIDER, ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN),
   async (req, res, next) => {
     try {
       req.body = {
@@ -27,7 +27,7 @@ router.post(
 // Get all chats for current user
 router.get(
   "/",
-  auth(USER_ROLES.USER, USER_ROLES.ADMIN),
+  auth(USER_ROLES.PROPERTY_MANAGER, USER_ROLES.SERVICE_PROVIDER, ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN),
   ChatController.getChat
 );
 
@@ -35,7 +35,7 @@ router.get(
 // Delete a chat
 router.delete(
   "/:id",
-  auth(USER_ROLES.USER, USER_ROLES.ADMIN),
+  auth(USER_ROLES.PROPERTY_MANAGER, USER_ROLES.SERVICE_PROVIDER, ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN),
   ChatController.deleteChat
 );
 

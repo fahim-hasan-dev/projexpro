@@ -1,6 +1,24 @@
 import { z } from "zod";
 import { USER_ROLES, USER_STATUS } from "./user.interface";
 
+export const propertyManagerProfileSchema = z.object({
+  contactFullName: z.string().optional(),
+  jobTitle: z.string().optional(),
+  businessEmail: z.string().email("Invalid business email").optional(),
+  businessPhone: z.string().optional(),
+  companyName: z.string().optional(),
+  legalBusinessName: z.string().optional(),
+  dbaTradeName: z.string().optional(),
+  companyWebsiteUrl: z.string().optional(),
+  businessAddress: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  taxId: z.string().optional(),
+  portfolioSize: z.string().optional(),
+  maintenanceInfrastructure: z.string().optional(),
+  propertyTypes: z.array(z.string()).optional(),
+});
+
 export const userSignupSchema = z.object({
   body: z.object({
     firstName: z.string().min(1, "First name is required"),
@@ -11,6 +29,7 @@ export const userSignupSchema = z.object({
     phone: z.string().optional(),
     password: z.string().min(6, "Password must be at least 6 characters"),
     role: z.nativeEnum(USER_ROLES).optional(),
+    propertyManagerProfile: propertyManagerProfileSchema.optional(),
   })
 });
 
@@ -34,7 +53,12 @@ export const userUpdateSchema = z.object({
     status: z.nativeEnum(USER_STATUS).optional(),
     verified: z.boolean().optional(),
     role: z.nativeEnum(USER_ROLES).optional(),
+    propertyManagerProfile: propertyManagerProfileSchema.optional(),
   })
+});
+
+export const updatePropertyManagerProfileSchema = z.object({
+  body: propertyManagerProfileSchema
 });
 
 export const changePasswordSchema = z.object({
@@ -48,5 +72,6 @@ export const UserValidations = {
   userSignupSchema,
   userLoginSchema,
   userUpdateSchema,
+  updatePropertyManagerProfileSchema,
   changePasswordSchema,
 };

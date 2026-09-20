@@ -52,7 +52,28 @@ const UserSchema = new Schema(
         role: {
             type: String,
             enum: Object.values(USER_ROLES),
-            default: USER_ROLES.USER,
+            default: USER_ROLES.PROPERTY_MANAGER,
+        },
+        propertyManagerProfile: {
+            type: {
+                contactFullName: { type: String, trim: true },
+                jobTitle: { type: String, trim: true },
+                businessEmail: { type: String, trim: true },
+                businessPhone: { type: String, trim: true },
+                companyName: { type: String, trim: true },
+                legalBusinessName: { type: String, trim: true },
+                dbaTradeName: { type: String, trim: true },
+                companyWebsiteUrl: { type: String, trim: true },
+                businessAddress: { type: String, trim: true },
+                city: { type: String, trim: true },
+                state: { type: String, trim: true },
+                taxId: { type: String, trim: true },
+                portfolioSize: { type: String, trim: true },
+                maintenanceInfrastructure: { type: String, trim: true },
+                propertyTypes: [{ type: String, trim: true }],
+            },
+            default: undefined,
+            _id: false,
         },
         authentication: {
             restrictionLeftAt: {
@@ -99,9 +120,21 @@ const UserSchema = new Schema(
         timestamps: true,
         toJSON: {
             virtuals: true,
+            transform: (doc, ret) => {
+                if (ret.role === USER_ROLES.SERVICE_PROVIDER || !ret.propertyManagerProfile) {
+                    delete ret.propertyManagerProfile;
+                }
+                return ret;
+            }
         },
         toObject: {
             virtuals: true,
+            transform: (doc, ret) => {
+                if (ret.role === USER_ROLES.SERVICE_PROVIDER || !ret.propertyManagerProfile) {
+                    delete ret.propertyManagerProfile;
+                }
+                return ret;
+            }
         },
     }
 );
@@ -119,6 +152,10 @@ UserSchema.statics.isPasswordMatched = async function (
 
 UserSchema.pre("save", async function (next) {
     try {
+        if (this.role === USER_ROLES.SERVICE_PROVIDER) {
+            this.propertyManagerProfile = undefined;
+        }
+
         if (this.isModified("email")) {
             const isExist = await User.findOne({
                 email: this.email,

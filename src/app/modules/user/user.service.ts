@@ -56,14 +56,68 @@ const updateProfile = async (
         throw new ApiError(StatusCodes.NOT_FOUND, 'User not found or deleted.')
     }
 
+    const currentRole = payload.role || isExistUser.role
+
+    const updateQuery: Record<string, any> = {}
+
+    if (currentRole === USER_ROLES.SERVICE_PROVIDER) {
+        delete payload.propertyManagerProfile
+        updateQuery['$unset'] = { propertyManagerProfile: 1 }
+    }
+
+    if (payload.propertyManagerProfile && currentRole === USER_ROLES.PROPERTY_MANAGER) {
+        const profileData = payload.propertyManagerProfile
+        delete payload.propertyManagerProfile
+
+        const flattenedProfile: Record<string, any> = {}
+        Object.keys(profileData).forEach((key) => {
+            flattenedProfile[`propertyManagerProfile.${key}`] = (profileData as any)[key]
+        })
+        updateQuery['$set'] = { ...payload, ...flattenedProfile }
+    } else {
+        updateQuery['$set'] = payload
+    }
+
     const updatedUser = await User.findOneAndUpdate(
         { _id: user.authId, status: { $ne: USER_STATUS.DELETED } },
-        payload,
+        updateQuery,
         { new: true },
     )
 
     if (!updatedUser) {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to update profile')
+    }
+
+    return updatedUser
+}
+
+const updatePropertyManagerProfile = async (
+    user: JwtPayload,
+    payload: Record<string, any>
+) => {
+    const isExistUser = await User.findById(user.authId)
+
+    if (!isExistUser) {
+        throw new ApiError(StatusCodes.NOT_FOUND, 'User not found or deleted.')
+    }
+
+    if (isExistUser.role !== USER_ROLES.PROPERTY_MANAGER) {
+        throw new ApiError(StatusCodes.FORBIDDEN, 'Property Manager profile is only available for Property Managers.')
+    }
+
+    const flattenedProfile: Record<string, any> = {}
+    Object.keys(payload).forEach((key) => {
+        flattenedProfile[`propertyManagerProfile.${key}`] = payload[key]
+    })
+
+    const updatedUser = await User.findOneAndUpdate(
+        { _id: user.authId, status: { $ne: USER_STATUS.DELETED } },
+        { $set: flattenedProfile },
+        { new: true },
+    )
+
+    if (!updatedUser) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to update Property Manager profile')
     }
 
     return updatedUser
@@ -76,6 +130,10 @@ const getProfile = async (user: JwtPayload) => {
             StatusCodes.NOT_FOUND,
             'The requested profile not found or deleted.',
         )
+    }
+
+    if (isExistUser.role === USER_ROLES.SERVICE_PROVIDER) {
+        delete (isExistUser as any).propertyManagerProfile
     }
 
     return isExistUser
@@ -98,6 +156,7 @@ const deleteMyAccount = async (user: JwtPayload) => {
 
 export const UserServices = {
     updateProfile,
+    updatePropertyManagerProfile,
     getAllUser,
     getSingleUser,
     deleteUser,

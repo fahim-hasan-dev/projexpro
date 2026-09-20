@@ -76,12 +76,22 @@ const deleteMyAccount = catchAsync(async (req: Request, res: Response) => {
 
 
 
+const updatePropertyManagerProfile = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserServices.updatePropertyManagerProfile(req.user! as JwtPayload, req.body)
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Property Manager Profile updated successfully',
+    data: result,
+  })
+})
+
 export const UserController = {
   getAllUser,
   updateProfile,
+  updatePropertyManagerProfile,
   getSingleUser,
   deleteUser,
   getProfile,
   deleteMyAccount,
- 
 }

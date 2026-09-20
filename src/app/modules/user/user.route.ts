@@ -4,6 +4,9 @@ import auth from '../../middleware/auth'
 import { ADMIN_ROLES, USER_ROLES } from '../../../enum/user'
 import fileUploadHandler from '../../middleware/fileUploadHandler'
 
+import validateRequest from '../../middleware/validateRequest'
+import { UserValidations } from './user.validation'
+
 const router = express.Router()
 
 router.get(
@@ -17,6 +20,13 @@ router.patch(
   auth(USER_ROLES.PROPERTY_MANAGER, USER_ROLES.SERVICE_PROVIDER, ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN),
   fileUploadHandler(),
   UserController.updateProfile,
+)
+
+router.patch(
+  '/property-manager-profile',
+  auth(USER_ROLES.PROPERTY_MANAGER),
+  validateRequest(UserValidations.updatePropertyManagerProfileSchema),
+  UserController.updatePropertyManagerProfile,
 )
 
 // delete my account
