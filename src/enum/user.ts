@@ -14,3 +14,10 @@ export enum USER_STATUS {
     DELETED = 'deleted',
 }
 
+export enum APPROVAL_STATUS {
+    PENDING = 'pending',
+    APPROVED = 'approved',
+    REJECTED = 'rejected',
+    RESUBMITTED = 'resubmitted',
+}
+

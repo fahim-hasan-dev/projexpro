@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ADMIN_ROLES, USER_STATUS } from "../../../enum/user";
+import { APPROVAL_STATUS, ADMIN_ROLES, USER_STATUS } from "../../../enum/user";
 
 export const createAdminZodSchema = z.object({
   body: z.object({
@@ -26,7 +26,17 @@ export const updateAdminZodSchema = z.object({
   }),
 });
 
+export const managePropertyManagerApprovalZodSchema = z.object({
+  body: z.object({
+    approvalStatus: z.nativeEnum(APPROVAL_STATUS, {
+      required_error: "Approval status is required (approved or rejected)",
+    }),
+    rejectionReason: z.string().optional(),
+  }),
+});
+
 export const AdminValidations = {
   createAdminZodSchema,
   updateAdminZodSchema,
+  managePropertyManagerApprovalZodSchema,
 };

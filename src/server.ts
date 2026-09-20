@@ -6,7 +6,7 @@ import config from './config'
 import { errorLogger, logger } from './shared/logger'
 import { socketHelper } from './helpers/socketHelper'
 import { UserServices } from './app/modules/user/user.service'
-import { seedAdmin } from './app/DB'
+import { seedAdmin, seedCategories } from './app/DB'
 
 process.on('uncaughtException', error => {
     errorLogger.error('UnhandledException Detected', error)
@@ -20,8 +20,9 @@ async function main() {
         await mongoose.connect(config.database_url as string)
         logger.info(colors.green('🚀 Database connected successfully'))
 
-        // Seed admin user
+        // Seed admin user and categories
         await seedAdmin()
+        await seedCategories()
 
         const port =
             typeof config.port === 'number' ? config.port : Number(config.port)

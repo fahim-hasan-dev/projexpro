@@ -4,6 +4,7 @@ import { createPlanZodValidationSchema, updatePlanZodValidationSchema } from "./
 import auth from "../../middleware/auth";
 import { ADMIN_ROLES, USER_ROLES } from "../../../enum/user";
 import validateRequest from "../../middleware/validateRequest";
+import requireApproval from "../../middleware/requireApproval";
 const router = express.Router()
 
 router.route("/")
@@ -20,6 +21,7 @@ router.route("/")
 router.post(
     "/create-checkout-session/:planId",
     auth(USER_ROLES.PROPERTY_MANAGER, USER_ROLES.SERVICE_PROVIDER),
+    requireApproval,
     PlanController.createCheckoutSession
 )
 

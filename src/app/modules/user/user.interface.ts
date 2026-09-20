@@ -1,6 +1,6 @@
 import { Model, Types } from "mongoose";
-import { USER_ROLES, USER_STATUS } from "../../../enum/user";
-export { USER_ROLES, USER_STATUS };
+import { APPROVAL_STATUS, USER_ROLES, USER_STATUS } from "../../../enum/user";
+export { APPROVAL_STATUS, USER_ROLES, USER_STATUS };
 
 export type IPropertyManagerProfile = {
     // Contact Details (Step 2)
@@ -21,6 +21,10 @@ export type IPropertyManagerProfile = {
     portfolioSize?: '1-10 Units' | '11-50 Units' | '51-200 Units' | '201-500 Units' | '501+ Units' | string;
     maintenanceInfrastructure?: string;
     propertyTypes?: string[];
+
+    // Approval Information
+    approvalStatus?: APPROVAL_STATUS;
+    rejectionReason?: string;
 };
 
 type IAuthentication = {

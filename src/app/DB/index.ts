@@ -1,6 +1,7 @@
 import config from '../../config'
 import { ADMIN_ROLES, USER_STATUS } from '../../enum/user'
 import { Admin } from '../modules/admin/admin.model'
+import { CategoryModel } from '../modules/category/category.model'
 import { logger } from '../../shared/logger'
 import colors from 'colors'
 
@@ -26,33 +27,86 @@ export const seedAdmin = async () => {
             ]
         })
 
-        if (isSuperAdminExist) {
-            logger.info(
-                colors.blue(
-                    'ℹ️ Super Admin account already exists. Skipping creation.'
-                )
-            )
+        if (!isSuperAdminExist) {
+            const adminName = config.super_admin.name || 'Super Admin'
+            const nameParts = adminName.trim().split(/\s+/)
+            const firstName = nameParts[0] || 'Super'
+            const lastName = nameParts.slice(1).join(' ') || 'Admin'
+
+            const superAdminData = {
+                email: adminEmail.toLowerCase().trim(),
+                password: adminPassword,
+                firstName,
+                lastName,
+                role: ADMIN_ROLES.SUPER_ADMIN,
+                verified: true,
+                status: USER_STATUS.ACTIVE,
+            }
+
+            await Admin.create(superAdminData)
+            logger.info(colors.green('🚀 Super Admin account seeded successfully!'))
+        }
+    } catch (error) {
+        logger.error(colors.red('❌ Failed to seed Super Admin account:'), error)
+    }
+}
+
+export const seedCategories = async () => {
+    try {
+        const count = await CategoryModel.countDocuments()
+        if (count > 0) {
             return
         }
 
-        const adminName = config.super_admin.name || 'Super Admin'
-        const nameParts = adminName.trim().split(/\s+/)
-        const firstName = nameParts[0] || 'Super'
-        const lastName = nameParts.slice(1).join(' ') || 'Admin'
+        const propertyTypes = [
+            {
+                name: 'Residential',
+                subCategories: [
+                    'Apartment Complex',
+                    'Single-family home',
+                    'Condominium',
+                    'Townhouse',
+                    'Other'
+                ]
+            },
+            {
+                name: 'Commercial',
+                subCategories: [
+                    'Office Building',
+                    'Retail Space',
+                    'Industrial / Warehouse',
+                    'Shopping Center',
+                    'Other'
+                ]
+            },
+            {
+                name: 'Mixed-use',
+                subCategories: [
+                    'Residential-Commercial Combo',
+                    'Live-Work Units',
+                    'Other'
+                ]
+            }
+        ]
 
-        const superAdminData = {
-            email: adminEmail.toLowerCase().trim(),
-            password: adminPassword,
-            firstName,
-            lastName,
-            role: ADMIN_ROLES.SUPER_ADMIN,
-            verified: true,
-            status: USER_STATUS.ACTIVE,
+        for (const type of propertyTypes) {
+            const parentCategory = await CategoryModel.create({
+                name: type.name,
+                parent: null,
+                isActive: true
+            })
+
+            for (const subName of type.subCategories) {
+                await CategoryModel.create({
+                    name: subName,
+                    parent: parentCategory._id,
+                    isActive: true
+                })
+            }
         }
 
-        await Admin.create(superAdminData)
-        logger.info(colors.green('🚀 Super Admin account seeded successfully!'))
+        logger.info(colors.green('🚀 Property Types & Sub-categories seeded successfully!'))
     } catch (error) {
-        logger.error(colors.red('❌ Failed to seed Super Admin account:'), error)
+        logger.error(colors.red('❌ Failed to seed Property Types:'), error)
     }
 }

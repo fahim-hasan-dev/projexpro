@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
-import { IUser, USER_ROLES, USER_STATUS, UserModel } from "./user.interface";
+import { IUser, USER_ROLES, USER_STATUS, APPROVAL_STATUS, UserModel } from "./user.interface";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../../../errors/ApiError";
 import config from "../../../config";
@@ -71,6 +71,15 @@ const UserSchema = new Schema(
                 portfolioSize: { type: String, trim: true },
                 maintenanceInfrastructure: { type: String, trim: true },
                 propertyTypes: [{ type: String, trim: true }],
+                approvalStatus: {
+                    type: String,
+                    enum: Object.values(APPROVAL_STATUS),
+                    default: APPROVAL_STATUS.PENDING,
+                },
+                rejectionReason: {
+                    type: String,
+                    default: "",
+                },
             },
             default: undefined,
             _id: false,
@@ -154,6 +163,10 @@ UserSchema.pre("save", async function (next) {
     try {
         if (this.role === USER_ROLES.SERVICE_PROVIDER) {
             this.propertyManagerProfile = undefined;
+        } else if (this.role === USER_ROLES.PROPERTY_MANAGER && this.propertyManagerProfile) {
+            if (!this.propertyManagerProfile.approvalStatus) {
+                this.propertyManagerProfile.approvalStatus = APPROVAL_STATUS.PENDING;
+            }
         }
 
         if (this.isModified("email")) {

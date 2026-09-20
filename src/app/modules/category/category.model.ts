@@ -1,17 +1,12 @@
 import { model, Schema } from "mongoose";
-import { ICategory } from "./category.interface";
+import { ICategory, CategoryModelType } from "./category.interface";
 
-const categorySchema = new Schema<ICategory>(
+const categorySchema = new Schema<ICategory, CategoryModelType>(
   {
     name: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
-    },
-    image: {
-      type: String,
-      required: true,
     },
     parent: {
       type: Schema.Types.ObjectId,
@@ -28,4 +23,7 @@ const categorySchema = new Schema<ICategory>(
   }
 );
 
-export const CategoryModel = model<ICategory>("Category", categorySchema);
+// Compound index to prevent duplicate category names under the same parent
+categorySchema.index({ name: 1, parent: 1 }, { unique: true });
+
+export const CategoryModel = model<ICategory, CategoryModelType>("Category", categorySchema);

@@ -2,7 +2,8 @@ import { StatusCodes } from 'http-status-codes';
 import ApiError from '../../../errors/ApiError';
 import { IAdmin } from './admin.interface';
 import { Admin } from './admin.model';
-import { ADMIN_ROLES, USER_STATUS } from '../../../enum/user';
+import { User } from '../user/user.model';
+import { ADMIN_ROLES, APPROVAL_STATUS, USER_ROLES, USER_STATUS } from '../../../enum/user';
 import { JwtPayload } from 'jsonwebtoken';
 import QueryBuilder from '../../builder/QueryBuilder';
 
@@ -102,6 +103,57 @@ const updateAdminProfile = async (user: JwtPayload, payload: Partial<IAdmin>) =>
     return result;
 };
 
+const managePropertyManagerApproval = async (
+    id: string,
+    payload: { approvalStatus: APPROVAL_STATUS; rejectionReason?: string }
+) => {
+    const user = await User.findById(id);
+    if (!user) {
+        throw new ApiError(StatusCodes.NOT_FOUND, 'Property Manager account not found');
+    }
+
+    if (user.role !== USER_ROLES.PROPERTY_MANAGER) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'User is not a Property Manager');
+    }
+
+    const updateData: Record<string, any> = {
+        'propertyManagerProfile.approvalStatus': payload.approvalStatus,
+    };
+
+    if (payload.approvalStatus === APPROVAL_STATUS.REJECTED) {
+        updateData['propertyManagerProfile.rejectionReason'] = payload.rejectionReason || 'Application rejected by administrator';
+    } else if (payload.approvalStatus === APPROVAL_STATUS.APPROVED) {
+        updateData['propertyManagerProfile.rejectionReason'] = '';
+    }
+
+    const result = await User.findByIdAndUpdate(id, updateData, { new: true }).select('-password -authentication');
+    return result;
+};
+
+const getAllPropertyManagers = async (query: Record<string, unknown>) => {
+    const userQueryBuilder = new QueryBuilder(
+        User.find({ role: USER_ROLES.PROPERTY_MANAGER, status: { $ne: USER_STATUS.DELETED } }).select('-password -authentication'),
+        query
+    )
+        .filter()
+        .sort()
+        .fields()
+        .paginate();
+
+    const propertyManagers = await userQueryBuilder.modelQuery.lean();
+    const paginationInfo = await userQueryBuilder.getPaginationInfo();
+    const totalPropertyManagers = await User.countDocuments({
+        role: USER_ROLES.PROPERTY_MANAGER,
+        status: { $ne: USER_STATUS.DELETED },
+    });
+
+    return {
+        propertyManagers,
+        meta: paginationInfo,
+        totalPropertyManagers,
+    };
+};
+
 export const AdminServices = {
     createAdmin,
     getAllAdmins,
@@ -110,4 +162,6 @@ export const AdminServices = {
     deleteAdmin,
     getAdminProfile,
     updateAdminProfile,
+    managePropertyManagerApproval,
+    getAllPropertyManagers,
 };

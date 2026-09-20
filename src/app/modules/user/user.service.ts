@@ -2,7 +2,7 @@ import { StatusCodes } from 'http-status-codes'
 import ApiError from '../../../errors/ApiError'
 import { IUser } from './user.interface'
 import { User } from './user.model'
-import { USER_ROLES, USER_STATUS } from '../../../enum/user'
+import { APPROVAL_STATUS, USER_ROLES, USER_STATUS } from '../../../enum/user'
 import { JwtPayload } from 'jsonwebtoken'
 import { logger } from '../../../shared/logger'
 import QueryBuilder from '../../builder/QueryBuilder'
@@ -73,6 +73,13 @@ const updateProfile = async (
         Object.keys(profileData).forEach((key) => {
             flattenedProfile[`propertyManagerProfile.${key}`] = (profileData as any)[key]
         })
+
+        // If previously rejected, set status to RESUBMITTED & clear rejectionReason
+        if (isExistUser.propertyManagerProfile?.approvalStatus === APPROVAL_STATUS.REJECTED) {
+            flattenedProfile['propertyManagerProfile.approvalStatus'] = APPROVAL_STATUS.RESUBMITTED
+            flattenedProfile['propertyManagerProfile.rejectionReason'] = ''
+        }
+
         updateQuery['$set'] = { ...payload, ...flattenedProfile }
     } else {
         updateQuery['$set'] = payload
@@ -109,6 +116,12 @@ const updatePropertyManagerProfile = async (
     Object.keys(payload).forEach((key) => {
         flattenedProfile[`propertyManagerProfile.${key}`] = payload[key]
     })
+
+    // On profile update/resubmission if rejected or pending, update approval status to RESUBMITTED and clear rejectionReason
+    if (isExistUser.propertyManagerProfile?.approvalStatus === APPROVAL_STATUS.REJECTED) {
+        flattenedProfile['propertyManagerProfile.approvalStatus'] = APPROVAL_STATUS.RESUBMITTED
+        flattenedProfile['propertyManagerProfile.rejectionReason'] = ''
+    }
 
     const updatedUser = await User.findOneAndUpdate(
         { _id: user.authId, status: { $ne: USER_STATUS.DELETED } },
