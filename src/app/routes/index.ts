@@ -13,6 +13,8 @@ import { ChatRoutes } from '../modules/chat/chat.routes';
 import { MessageRoutes } from '../modules/message/message.routes';
 import { NotificationRoutes } from '../modules/notification/notification.routes';
 import { AdminRoutes } from '../modules/admin/admin.route';
+import { PropertyRoutes } from '../modules/property/property.route';
+import { ServiceRequestRoutes } from '../modules/serviceRequest/serviceRequest.route';
 
 
 const router = express.Router();
@@ -22,6 +24,8 @@ const apiRoutes = [
     { path: "/admin", route: AdminRoutes },
     { path: "/auth", route: AuthRoutes },
     { path: "/category", route: CategoryRoutes },
+    { path: "/property", route: PropertyRoutes },
+    { path: "/service-request", route: ServiceRequestRoutes },
     { path: "/review", route: ReviewRoutes },
     { path: "/payment", route: PaymentRoutes },
     { path: "/public", route: PublicRoutes },
