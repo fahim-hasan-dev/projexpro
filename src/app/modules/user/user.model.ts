@@ -71,6 +71,7 @@ const UserSchema = new Schema(
         password: {
             type: String,
             required: true,
+            select: false,
         },
         image: {
             type: String,
@@ -86,7 +87,11 @@ const UserSchema = new Schema(
         },
         username: {
             type: String,
-            default: "",
+            required: [true, 'Username is required'],
+            unique: true,
+            trim: true,
+            lowercase: true,
+            sparse: true,
         },
         contactNumber: {
             type: String,
@@ -207,36 +212,40 @@ const UserSchema = new Schema(
             _id: false,
         },
         authentication: {
-            restrictionLeftAt: {
-                type: Date,
-                default: null,
+            type: {
+                restrictionLeftAt: {
+                    type: Date,
+                    default: null,
+                },
+                resetPassword: {
+                    type: Boolean,
+                    default: false,
+                },
+                wrongLoginAttempts: {
+                    type: Number,
+                    default: 0,
+                },
+                passwordChangedAt: Date,
+                oneTimeCode: {
+                    type: String,
+                    default: "",
+                },
+                latestRequestAt: {
+                    type: Date,
+                    default: Date.now,
+                },
+                expiresAt: Date,
+                requestCount: {
+                    type: Number,
+                    default: 0,
+                },
+                authType: {
+                    type: String,
+                    enum: ['createAccount', 'resetPassword'],
+                },
             },
-            resetPassword: {
-                type: Boolean,
-                default: false,
-            },
-            wrongLoginAttempts: {
-                type: Number,
-                default: 0,
-            },
-            passwordChangedAt: Date,
-            oneTimeCode: {
-                type: String,
-                default: "",
-            },
-            latestRequestAt: {
-                type: Date,
-                default: Date.now,
-            },
-            expiresAt: Date,
-            requestCount: {
-                type: Number,
-                default: 0,
-            },
-            authType: {
-                type: String,
-                enum: ['createAccount', 'resetPassword'],
-            },
+            select: false,
+            _id: false,
         },
         deviceToken: {
             type: String,
@@ -249,6 +258,20 @@ const UserSchema = new Schema(
     },
     {
         timestamps: true,
+        toJSON: {
+            transform: function (doc, ret) {
+                delete ret.password;
+                delete ret.authentication;
+                return ret;
+            },
+        },
+        toObject: {
+            transform: function (doc, ret) {
+                delete ret.password;
+                delete ret.authentication;
+                return ret;
+            },
+        },
     }
 );
 
@@ -275,6 +298,23 @@ UserSchema.pre("save", async function (next) {
         }
 
         this.profileCompletionPercentage = calculateProfileCompletion(this);
+
+        if (this.isModified("username") && this.username) {
+            const isExistUsername = await User.findOne({
+                username: this.username.toLowerCase().trim(),
+                status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },
+                _id: { $ne: this._id },
+            });
+
+            if (isExistUsername) {
+                return next(
+                    new ApiError(
+                        StatusCodes.BAD_REQUEST,
+                        "An account with this username already exists"
+                    )
+                );
+            }
+        }
 
         if (this.isModified("email")) {
             const isExist = await User.findOne({

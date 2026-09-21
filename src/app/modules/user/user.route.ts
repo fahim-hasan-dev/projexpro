@@ -1,10 +1,13 @@
 import express from 'express'
 import { UserController } from './user.controller'
+import { AuthController } from '../auth/auth.controller'
 import auth from '../../middleware/auth'
 import { ADMIN_ROLES, USER_ROLES } from '../../../enum/user'
 import { fileAndBodyProcessorUsingDiskStorage } from '../../middleware/processReqBody'
 
 const router = express.Router()
+
+router.get('/check-username', AuthController.checkUsername)
 
 router.get(
   '/me',

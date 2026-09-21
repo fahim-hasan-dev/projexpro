@@ -144,6 +144,19 @@ const deleteAccount = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
+const checkUsername = catchAsync(async (req: Request, res: Response) => {
+  const username = (req.query.username || req.body.username) as string
+  const result = await AuthServices.checkUsername(username)
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.isAvailable
+      ? 'Username is available'
+      : 'Username is already taken',
+    data: result,
+  })
+})
+
 const logOut = catchAsync(async (req: Request, res: Response) => {
   res.clearCookie('refreshToken', {
     secure: config.node_env === 'production',
@@ -167,6 +180,6 @@ export const AuthController = {
   createUser,
   deleteAccount,
   adminLogin,
-
-  logOut
+  checkUsername,
+  logOut,
 }

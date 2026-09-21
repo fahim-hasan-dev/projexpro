@@ -1,0 +1,1552 @@
+{
+	"info": {
+		"_postman_id": "projexpro-api-collection-v2",
+		"name": "ProjexPro API Collection",
+		"description": "Complete Postman collection for ProjexPro Backend APIs with form-data JSON 'data' field structure and separate Property Manager & Service Provider profile update requests.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api/v1",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "YOUR_JWT_TOKEN_HERE",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Auth Module",
+			"item": [
+				{
+					"name": "User Signup (Form-Data with Root File & Data JSON)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "data",
+									"value": "{\n  \"firstName\": \"Fahim\",\n  \"lastName\": \"Hasan\",\n  \"email\": \"manager@example.com\",\n  \"password\": \"12345678\",\n  \"contactNumber\": \"+447123456789\",\n  \"role\": \"property_manager\"\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/signup",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "signup"]
+						},
+						"description": "Register a new Property Manager or Service Provider. File is sent at root ('image') and text fields are passed as stringified JSON in the 'data' field."
+					}
+				},
+				{
+					"name": "User Login",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"manager@example.com\",\n  \"password\": \"12345678\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Admin Login",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"12345678\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/admin-login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "admin-login"]
+						}
+					}
+				},
+				{
+					"name": "Verify Account OTP",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"manager@example.com\",\n  \"oneTimeCode\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/verify-account",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "verify-account"]
+						}
+					}
+				},
+				{
+					"name": "Resend OTP",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"manager@example.com\",\n  \"type\": \"createAccount\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/resend-otp",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "resend-otp"]
+						}
+					}
+				},
+				{
+					"name": "Forget Password",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"manager@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/forget-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "forget-password"]
+						}
+					}
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"manager@example.com\",\n  \"oneTimeCode\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/reset-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "reset-password"]
+						}
+					}
+				},
+				{
+					"name": "Change Password",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"currentPassword\": \"12345678\",\n  \"newPassword\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/change-password",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "change-password"]
+						}
+					}
+				},
+				{
+					"name": "Get Refresh Access Token",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"YOUR_REFRESH_TOKEN\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/access-token",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "access-token"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "logout"]
+						}
+					}
+				},
+				{
+					"name": "Delete Account",
+					"request": {
+						"method": "DELETE",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"password\": \"12345678\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/delete-account",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "delete-account"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "User Profile Module",
+			"item": [
+				{
+					"name": "Get My Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "me"]
+						}
+					}
+				},
+				{
+					"name": "Update Profile - Property Manager (Root Image + Data JSON)",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "data",
+									"value": "{\n  \"firstName\": \"Fahim\",\n  \"lastName\": \"Hasan\",\n  \"phone\": \"+447123456789\",\n  \"profile\": {\n    \"contactFullName\": \"Fahim Hasan\",\n    \"jobTitle\": \"Senior Property Manager\",\n    \"companyName\": \"ProjexPro Estates Ltd\",\n    \"businessEmail\": \"manager@projexpro.com\",\n    \"businessPhone\": \"+447999888777\",\n    \"taxId\": \"UK-TAX-998811\",\n    \"portfolioSize\": \"51-200 Units\",\n    \"businessAddress\": \"123 Main Street\",\n    \"city\": \"London\",\n    \"state\": \"England\"\n  }\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "profile"]
+						},
+						"description": "Dedicated update request for Property Manager profile. Image is sent as a root file field and all text/profile data is passed inside the 'data' JSON string."
+					}
+				},
+				{
+					"name": "Update Profile - Service Provider (Root Files + Data JSON)",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "governmentId",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "proofOfInsurance",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "documents",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "data",
+									"value": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Smith\",\n  \"phone\": \"+447123456789\",\n  \"profile\": {\n    \"companyName\": \"Apex Maintenance Services\",\n    \"streetAddress\": \"45 Commercial Rd\",\n    \"city\": \"London\",\n    \"state\": \"England\",\n    \"zipCode\": \"E1 6AN\",\n    \"bio\": \"Certified electrician & plumber with 8+ years experience\",\n    \"skills\": [\"Electrical\", \"Plumbing\", \"HVAC\"],\n    \"yearsInBusiness\": 8,\n    \"officeAddress\": \"45 Commercial Rd\",\n    \"officePhone\": \"+442079460912\",\n    \"taxId\": \"SP-TAX-445566\"\n  }\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "profile"]
+						},
+						"description": "Dedicated update request for Service Provider profile with root document/ID files and text/profile data in the 'data' JSON string."
+					}
+				},
+				{
+					"name": "Update Property Manager Profile (Alias)",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "data",
+									"value": "{\n  \"profile\": {\n    \"companyName\": \"ProjexPro Management Ltd\",\n    \"portfolioSize\": \"51-200 Units\"\n  }\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/property-manager-profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "property-manager-profile"]
+						}
+					}
+				},
+				{
+					"name": "Update Service Provider Profile (Alias)",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "proofOfInsurance",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "data",
+									"value": "{\n  \"profile\": {\n    \"companyName\": \"Apex Maintenance Services\",\n    \"yearsInBusiness\": 5\n  }\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/service-provider-profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "service-provider-profile"]
+						}
+					}
+				},
+				{
+					"name": "Get All Users (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user?role=property_manager&page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["user"],
+							"query": [
+								{ "key": "role", "value": "property_manager" },
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Single User By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user/USER_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "USER_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Delete My Account",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "me"]
+						}
+					}
+				},
+				{
+					"name": "Delete User By ID (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/user/USER_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "USER_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin Management Module",
+			"item": [
+				{
+					"name": "Get Admin Profile",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "me"]
+						}
+					}
+				},
+				{
+					"name": "Update Admin Profile (Root Image + Data JSON)",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "data",
+									"value": "{\n  \"firstName\": \"Admin\",\n  \"lastName\": \"User\"\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "me"]
+						}
+					}
+				},
+				{
+					"name": "Create New Admin (Super Admin Only)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"New\",\n  \"lastName\": \"Admin\",\n  \"email\": \"subadmin@projexpro.com\",\n  \"password\": \"Admin1234!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin"]
+						}
+					}
+				},
+				{
+					"name": "Get All Admins",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin"]
+						}
+					}
+				},
+				{
+					"name": "Get All Property Managers (Admin View)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/property-managers",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "property-managers"]
+						}
+					}
+				},
+				{
+					"name": "Get All Service Providers (Admin View)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/service-providers",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "service-providers"]
+						}
+					}
+				},
+				{
+					"name": "Approve / Reject User Account (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"approvalStatus\": \"approved\",\n  \"rejectionReason\": \"\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/users/USER_ID_HERE/approval",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "users", "USER_ID_HERE", "approval"]
+						}
+					}
+				},
+				{
+					"name": "Approve / Reject Property Manager (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"approvalStatus\": \"approved\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/property-managers/USER_ID_HERE/approval",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "property-managers", "USER_ID_HERE", "approval"]
+						}
+					}
+				},
+				{
+					"name": "Delete Admin",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/admin/ADMIN_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "ADMIN_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Category Module",
+			"item": [
+				{
+					"name": "Create Category / Sub-Category (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Roofing & Construction\",\n  \"parent\": null\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/category/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["category", "create"]
+						}
+					}
+				},
+				{
+					"name": "Get All Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/category",
+							"host": ["{{baseUrl}}"],
+							"path": ["category"]
+						}
+					}
+				},
+				{
+					"name": "Get Sub-Categories By Parent ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/category/sub-categories/PARENT_CATEGORY_ID",
+							"host": ["{{baseUrl}}"],
+							"path": ["category", "sub-categories", "PARENT_CATEGORY_ID"]
+						}
+					}
+				},
+				{
+					"name": "Get Single Category",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/category/CATEGORY_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["category", "CATEGORY_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Update Category (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Roofing Repairs & Overhaul\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/category/CATEGORY_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["category", "CATEGORY_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Delete Category (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/category/CATEGORY_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["category", "CATEGORY_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Property Module",
+			"item": [
+				{
+					"name": "Create Property (Root Image + Data JSON)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "data",
+									"value": "{\n  \"name\": \"Sunset Apartments\",\n  \"address\": \"124 King Street, London\",\n  \"category\": \"CATEGORY_ID_HERE\",\n  \"subCategory\": \"SUB_CATEGORY_ID_HERE\",\n  \"unitSuiteNo\": \"Suite #402\",\n  \"totalUnits\": 25,\n  \"floorRange\": \"Floor 1-5\"\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/property/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["property", "create"]
+						},
+						"description": "Property Manager creates a new property. Total units count is checked against active subscription maxUnits."
+					}
+				},
+				{
+					"name": "Get My Properties (Property Manager)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/property/my-properties?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["property", "my-properties"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Get All Properties",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/property?searchTerm=Sunset",
+							"host": ["{{baseUrl}}"],
+							"path": ["property"],
+							"query": [
+								{ "key": "searchTerm", "value": "Sunset" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Single Property By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/property/PROPERTY_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["property", "PROPERTY_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Update Property (Root Image + Data JSON)",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "data",
+									"value": "{\n  \"name\": \"Sunset Luxury Apartments\",\n  \"totalUnits\": 30\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/property/PROPERTY_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["property", "PROPERTY_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Delete Property",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/property/PROPERTY_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["property", "PROPERTY_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Service Request Module",
+			"item": [
+				{
+					"name": "Create Service Request (Root Files + Data JSON)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "images",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "data",
+									"value": "{\n  \"property\": \"PROPERTY_ID_HERE\",\n  \"issueTitle\": \"Roof Repair & Shingle Overhaul\",\n  \"description\": \"Roof renovation phase 2 - waterproofing and tile repair\",\n  \"priority\": \"High\",\n  \"isOccupied\": true,\n  \"tenantName\": \"John Doe\",\n  \"tenantPhone\": \"+447000111222\",\n  \"locationDetails\": \"Block B, 4th Floor Roof\"\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/service-request/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["service-request", "create"]
+						}
+					}
+				},
+				{
+					"name": "Get All Service Requests",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/service-request?status=Pending&page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["service-request"],
+							"query": [
+								{ "key": "status", "value": "Pending" },
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Single Service Request By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/service-request/SERVICE_REQUEST_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["service-request", "SERVICE_REQUEST_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Assign Service Provider & Set Payout Charge (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"assignedProvider\": \"SERVICE_PROVIDER_USER_ID\",\n  \"basePayment\": 8000,\n  \"specializedRate\": {\n    \"isActive\": false,\n    \"paymentType\": \"Flat Amount\",\n    \"value\": 0,\n    \"reason\": \"Standard rate\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/service-request/assign/SERVICE_REQUEST_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["service-request", "assign", "SERVICE_REQUEST_ID_HERE"]
+						},
+						"description": "Admin assigns or reassigns contractor, sets price/charge, and triggers assignment notifications."
+					}
+				},
+				{
+					"name": "Update Service Request Status (Provider / Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"Completed\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/service-request/status/SERVICE_REQUEST_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["service-request", "status", "SERVICE_REQUEST_ID_HERE"]
+						},
+						"description": "When status changes to 'Completed', an Invoice is automatically generated for the Property Manager."
+					}
+				},
+				{
+					"name": "Delete Service Request",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/service-request/SERVICE_REQUEST_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["service-request", "SERVICE_REQUEST_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Invoice & Stripe Payment Module",
+			"item": [
+				{
+					"name": "Generate Invoice For Service Request",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"serviceRequestId\": \"SERVICE_REQUEST_ID_HERE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/invoice/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["invoice", "create"]
+						}
+					}
+				},
+				{
+					"name": "Pay Invoice via Stripe (Pay Now)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/invoice/INVOICE_ID_HERE/pay",
+							"host": ["{{baseUrl}}"],
+							"path": ["invoice", "INVOICE_ID_HERE", "pay"]
+						},
+						"description": "Creates a Stripe Checkout Session for the balance due on the invoice and returns the payment checkout URL."
+					}
+				},
+				{
+					"name": "Get My Invoices (Property Manager)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/invoice/my-invoices?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["invoice", "my-invoices"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Invoice By Service Request ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/invoice/service-request/SERVICE_REQUEST_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["invoice", "service-request", "SERVICE_REQUEST_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Get Single Invoice Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/invoice/INVOICE_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["invoice", "INVOICE_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Get All Invoices (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/invoice/admin/all",
+							"host": ["{{baseUrl}}"],
+							"path": ["invoice", "admin", "all"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Plan & Subscription Module",
+			"item": [
+				{
+					"name": "Create Subscription Plan (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Standard Manager Plan\",\n  \"description\": \"Up to 100 units management\",\n  \"price\": 149,\n  \"duration\": \"1 month\",\n  \"paymentType\": \"Monthly\",\n  \"maxUnits\": 100,\n  \"features\": [\n    \"Up to 100 Property Units\",\n    \"Service Request Management\",\n    \"Priority Support\"\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/plan",
+							"host": ["{{baseUrl}}"],
+							"path": ["plan"]
+						}
+					}
+				},
+				{
+					"name": "Get All Plans",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/plan",
+							"host": ["{{baseUrl}}"],
+							"path": ["plan"]
+						}
+					}
+				},
+				{
+					"name": "Create Plan Checkout Session (Buy Plan)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/plan/create-checkout-session/PLAN_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["plan", "create-checkout-session", "PLAN_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Update Plan (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Standard Manager Plan Pro\",\n  \"price\": 169,\n  \"maxUnits\": 120\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/plan/PLAN_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["plan", "PLAN_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Delete Plan (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/plan/PLAN_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["plan", "PLAN_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Get All Subscriptions (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/subscription",
+							"host": ["{{baseUrl}}"],
+							"path": ["subscription"]
+						}
+					}
+				},
+				{
+					"name": "Get My Active Subscription Plan",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/subscription/my-plan",
+							"host": ["{{baseUrl}}"],
+							"path": ["subscription", "my-plan"]
+						}
+					}
+				},
+				{
+					"name": "Cancel Subscription",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cancelImmediately\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscription/cancel",
+							"host": ["{{baseUrl}}"],
+							"path": ["subscription", "cancel"]
+						}
+					}
+				},
+				{
+					"name": "Toggle Auto Renewal (ON / OFF)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"autoRenew\": false\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscription/toggle-auto-renew",
+							"host": ["{{baseUrl}}"],
+							"path": ["subscription", "toggle-auto-renew"]
+						}
+					}
+				},
+				{
+					"name": "Upgrade / Switch Subscription Plan",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"newPlanId\": \"NEW_PLAN_ID_HERE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/subscription/upgrade",
+							"host": ["{{baseUrl}}"],
+							"path": ["subscription", "upgrade"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Payment Records Module",
+			"item": [
+				{
+					"name": "Create Generic Checkout Session",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payment/checkout-session/REFERENCE_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["payment", "checkout-session", "REFERENCE_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Get All Payment Transactions (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payment",
+							"host": ["{{baseUrl}}"],
+							"path": ["payment"]
+						}
+					}
+				},
+				{
+					"name": "Get Single Payment Transaction By ID (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/payment/PAYMENT_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["payment", "PAYMENT_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Review Module",
+			"item": [
+				{
+					"name": "Create Review",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"targetUser\": \"SERVICE_PROVIDER_USER_ID\",\n  \"serviceRequest\": \"SERVICE_REQUEST_ID_HERE\",\n  \"rating\": 5,\n  \"comment\": \"Excellent and fast service!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/review",
+							"host": ["{{baseUrl}}"],
+							"path": ["review"]
+						}
+					}
+				},
+				{
+					"name": "Get All Reviews",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/review",
+							"host": ["{{baseUrl}}"],
+							"path": ["review"]
+						}
+					}
+				},
+				{
+					"name": "Get Single Review",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/review/REVIEW_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["review", "REVIEW_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Delete Review",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/review/REVIEW_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["review", "REVIEW_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Public, FAQ & Contact Module",
+			"item": [
+				{
+					"name": "Create Public Content",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Terms & Conditions\",\n  \"content\": \"Privacy policy and terms of service...\",\n  \"type\": \"terms\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/public",
+							"host": ["{{baseUrl}}"],
+							"path": ["public"]
+						}
+					}
+				},
+				{
+					"name": "Get Public Content By Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/public/terms",
+							"host": ["{{baseUrl}}"],
+							"path": ["public", "terms"]
+						}
+					}
+				},
+				{
+					"name": "Delete Public Content",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/public/PUBLIC_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["public", "PUBLIC_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Submit Public Contact Form",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"janesmith@example.com\",\n  \"phone\": \"+447888999000\",\n  \"message\": \"Interested in enterprise property management plans.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/public/contact",
+							"host": ["{{baseUrl}}"],
+							"path": ["public", "contact"]
+						}
+					}
+				},
+				{
+					"name": "Get All Contact Form Submissions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/public/contact/all",
+							"host": ["{{baseUrl}}"],
+							"path": ["public", "contact", "all"]
+						}
+					}
+				},
+				{
+					"name": "Create FAQ (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question\": \"How do I request maintenance?\",\n  \"answer\": \"Create a service request through your dashboard.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/public/faq",
+							"host": ["{{baseUrl}}"],
+							"path": ["public", "faq"]
+						}
+					}
+				},
+				{
+					"name": "Update FAQ (Admin)",
+					"request": {
+						"method": "PATCH",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"question\": \"How do I request urgent maintenance?\",\n  \"answer\": \"Mark priority as Urgent when creating a service request.\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/public/faq/FAQ_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["public", "faq", "FAQ_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Get Single FAQ",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/public/faq/single/FAQ_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["public", "faq", "single", "FAQ_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Get All FAQs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/public/faq/all",
+							"host": ["{{baseUrl}}"],
+							"path": ["public", "faq", "all"]
+						}
+					}
+				},
+				{
+					"name": "Delete FAQ (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/public/faq/FAQ_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["public", "faq", "FAQ_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Chat & Messaging Module",
+			"item": [
+				{
+					"name": "Create Chat Conversation",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"participant\": \"TARGET_USER_ID_HERE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/chat",
+							"host": ["{{baseUrl}}"],
+							"path": ["chat"]
+						}
+					}
+				},
+				{
+					"name": "Get My Chats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/chat",
+							"host": ["{{baseUrl}}"],
+							"path": ["chat"]
+						}
+					}
+				},
+				{
+					"name": "Delete Chat Conversation",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/chat/CHAT_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["chat", "CHAT_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Send Message (Root File + Data JSON)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "image",
+									"type": "file",
+									"src": ""
+								},
+								{
+									"key": "data",
+									"value": "{\n  \"chat\": \"CHAT_ID_HERE\",\n  \"text\": \"Hello, I have updated the work progress for your property.\"\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{baseUrl}}/message",
+							"host": ["{{baseUrl}}"],
+							"path": ["message"]
+						}
+					}
+				},
+				{
+					"name": "Get Messages for Chat",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/message/CHAT_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["message", "CHAT_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Update Message Text",
+					"request": {
+						"method": "PATCH",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"text\": \"Updated message text\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/message/MESSAGE_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["message", "MESSAGE_ID_HERE"]
+						}
+					}
+				},
+				{
+					"name": "Get Total Unread Message Count",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/message/unread/count",
+							"host": ["{{baseUrl}}"],
+							"path": ["message", "unread", "count"]
+						}
+					}
+				},
+				{
+					"name": "Accept / Reject Money Request Status in Chat",
+					"request": {
+						"method": "PATCH",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"Accepted\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/message/MESSAGE_ID_HERE/money-request",
+							"host": ["{{baseUrl}}"],
+							"path": ["message", "MESSAGE_ID_HERE", "money-request"]
+						}
+					}
+				},
+				{
+					"name": "Delete Message",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/message/MESSAGE_ID_HERE",
+							"host": ["{{baseUrl}}"],
+							"path": ["message", "MESSAGE_ID_HERE"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Notification Module",
+			"item": [
+				{
+					"name": "Get My Notifications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/notification?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["notification"],
+							"query": [
+								{ "key": "page", "value": "1" },
+								{ "key": "limit", "value": "10" }
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Unread Notification Count",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/notification/unread-count",
+							"host": ["{{baseUrl}}"],
+							"path": ["notification", "unread-count"]
+						}
+					}
+				},
+				{
+					"name": "Test Push Notification (FCM)",
+					"request": {
+						"method": "POST",
+						"header": [{ "key": "Content-Type", "value": "application/json" }],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fcmToken\": \"YOUR_FCM_DEVICE_TOKEN\",\n  \"title\": \"Test Notification\",\n  \"message\": \"This is a test notification from ProjexPro\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notification/test-push",
+							"host": ["{{baseUrl}}"],
+							"path": ["notification", "test-push"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Stripe Webhook Module",
+			"item": [
+				{
+					"name": "Stripe Webhook Listener Endpoint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "stripe-signature", "value": "YOUR_STRIPE_SIGNATURE_HEADER", "type": "text" },
+							{ "key": "Content-Type", "value": "application/json", "type": "text" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"checkout.session.completed\",\n  \"data\": {\n    \"object\": {\n      \"id\": \"cs_test_12345\",\n      \"mode\": \"payment\"\n    }\n  }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/webhook",
+							"host": ["{{baseUrl}}"],
+							"path": ["webhook"]
+						},
+						"description": "Stripe Webhook endpoint for events such as checkout.session.completed, customer.subscription.updated, customer.subscription.deleted, invoice.payment_succeeded."
+					}
+				}
+			]
+		}
+	]
+}

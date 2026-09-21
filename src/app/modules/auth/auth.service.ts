@@ -19,9 +19,10 @@ import bcrypt from 'bcrypt'
 import cryptoToken, { generateOtp } from '../../../utils/crypto'
 import { Token } from '../token/token.model'
 import { IUser } from '../user/user.interface'
+import { PROPERTY_MANAGER_PROFILE_FIELDS, SERVICE_PROVIDER_PROFILE_FIELDS } from '../user/user.service'
 import mongoose from 'mongoose'
 
-export const createUser = async (payload: IUser) => {
+export const createUser = async (payload: IUser & Record<string, any>) => {
   payload.email = payload.email?.toLowerCase().trim()
   const session = await mongoose.startSession()
 
@@ -35,22 +36,64 @@ export const createUser = async (payload: IUser) => {
       )
     }
 
-    // 1. Check if user already exists
-    const isUserExist = await User.findOne({
+    const userRole = payload.role || USER_ROLES.PROPERTY_MANAGER
+
+    // Isolate profile fields based on role
+    let rawProfileData: Record<string, any> = {}
+    if (payload.profile && typeof payload.profile === 'object') {
+      Object.assign(rawProfileData, payload.profile)
+    }
+    if (userRole === USER_ROLES.PROPERTY_MANAGER && payload.propertyManagerProfile) {
+      Object.assign(rawProfileData, payload.propertyManagerProfile)
+    }
+    if (userRole === USER_ROLES.SERVICE_PROVIDER && payload.serviceProviderProfile) {
+      Object.assign(rawProfileData, payload.serviceProviderProfile)
+    }
+
+    const cleanProfile: Record<string, any> = {}
+    const allowedFields = userRole === USER_ROLES.PROPERTY_MANAGER
+      ? PROPERTY_MANAGER_PROFILE_FIELDS
+      : userRole === USER_ROLES.SERVICE_PROVIDER
+        ? SERVICE_PROVIDER_PROFILE_FIELDS
+        : [...PROPERTY_MANAGER_PROFILE_FIELDS, ...SERVICE_PROVIDER_PROFILE_FIELDS]
+
+    allowedFields.forEach((field) => {
+      if (rawProfileData[field] !== undefined) {
+        cleanProfile[field] = rawProfileData[field]
+      }
+    })
+
+    if (Object.keys(cleanProfile).length > 0) {
+      payload.profile = cleanProfile as any
+    }
+
+    if (!payload.username) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Username is required.')
+    }
+    payload.username = payload.username.toLowerCase().trim()
+
+    // 1. Check if user email or username already exists
+    const isEmailExist = await User.findOne({
       email: payload.email,
       status: { $nin: [USER_STATUS.DELETED] },
     }).session(session)
 
-    if (payload.contactNumber && !payload.phone) {
-      payload.phone = payload.contactNumber
-    } else if (payload.phone && !payload.contactNumber) {
-      payload.contactNumber = payload.phone
-    }
-
-    if (isUserExist) {
+    if (isEmailExist) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
         `An account with this email already exists.`,
+      )
+    }
+
+    const isUsernameExist = await User.findOne({
+      username: payload.username,
+      status: { $nin: [USER_STATUS.DELETED] },
+    }).session(session)
+
+    if (isUsernameExist) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        `An account with username '${payload.username}' already exists.`,
       )
     }
 
@@ -86,11 +129,12 @@ export const createUser = async (payload: IUser) => {
           ...payload,
           password: payload.password,
           authentication,
-          role: payload.role || USER_ROLES.PROPERTY_MANAGER,
+          role: userRole,
         },
       ],
       { session },
     )
+
 
     if (!user[0])
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user.')
@@ -684,6 +728,24 @@ const changePassword = async (
   return { message: 'Password changed successfully' }
 }
 
+const checkUsername = async (username: string) => {
+  if (!username || !username.trim()) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Username query parameter is required.')
+  }
+
+  const formattedUsername = username.toLowerCase().trim()
+  const isExist = await User.findOne({
+    username: formattedUsername,
+    status: { $nin: [USER_STATUS.DELETED] },
+  }).lean()
+
+  return {
+    username: formattedUsername,
+    isAvailable: !isExist,
+    exists: !!isExist,
+  }
+}
+
 export const AuthServices = {
   forgetPassword,
   resetPassword,
@@ -696,5 +758,6 @@ export const AuthServices = {
   resendOtp,
   changePassword,
   createUser,
-  adminLogin
+  adminLogin,
+  checkUsername,
 }

@@ -2,9 +2,107 @@ import { StatusCodes } from 'http-status-codes'
 import ApiError from '../../../errors/ApiError'
 import { IUser } from './user.interface'
 import { User, calculateProfileCompletion } from './user.model'
-import { APPROVAL_STATUS, USER_STATUS } from '../../../enum/user'
+import { APPROVAL_STATUS, USER_ROLES, USER_STATUS } from '../../../enum/user'
 import { JwtPayload } from 'jsonwebtoken'
 import QueryBuilder from '../../builder/QueryBuilder'
+
+export const PROPERTY_MANAGER_PROFILE_FIELDS = [
+    'contactFullName',
+    'jobTitle',
+    'businessEmail',
+    'businessPhone',
+    'companyName',
+    'legalBusinessName',
+    'dbaTradeName',
+    'companyWebsiteUrl',
+    'businessAddress',
+    'city',
+    'state',
+    'taxId',
+    'portfolioSize',
+    'maintenanceInfrastructure',
+    'propertyTypes',
+    'approvalStatus',
+    'rejectionReason',
+]
+
+export const SERVICE_PROVIDER_PROFILE_FIELDS = [
+    'streetAddress',
+    'city',
+    'state',
+    'zipCode',
+    'bio',
+    'skills',
+    'companyName',
+    'officeAddress',
+    'officeCity',
+    'officeState',
+    'officeZipCode',
+    'officePhone',
+    'taxId',
+    'yearsInBusiness',
+    'licenses',
+    'governmentId',
+    'proofOfInsurance',
+    'documents',
+    'isAccountPaused',
+    'approvalStatus',
+    'rejectionReason',
+]
+
+export const ROOT_USER_FIELDS = [
+    'firstName',
+    'lastName',
+    'username',
+    'email',
+    'contactNumber',
+    'phone',
+    'image',
+    'deviceToken',
+    'fcmToken',
+    'approvalStatus',
+    'rejectionReason',
+    'status',
+    'verified',
+    'subscribe',
+    'subscription',
+    'totalUnitsUsed',
+]
+
+export const sanitizeUserProfile = (user: any) => {
+    if (!user) return user;
+    if (typeof user.toObject === 'function') {
+        user = user.toObject();
+    }
+
+    delete user.authentication;
+    delete user.password;
+
+    if (!user.profile || typeof user.profile !== 'object') {
+        return user;
+    }
+
+    const role = user.role;
+    const cleanProfile: Record<string, any> = {};
+
+    if (role === USER_ROLES.PROPERTY_MANAGER) {
+        PROPERTY_MANAGER_PROFILE_FIELDS.forEach((field) => {
+            if (user.profile[field] !== undefined) {
+                cleanProfile[field] = user.profile[field];
+            }
+        });
+        user.profile = cleanProfile;
+    } else if (role === USER_ROLES.SERVICE_PROVIDER) {
+        SERVICE_PROVIDER_PROFILE_FIELDS.forEach((field) => {
+            if (user.profile[field] !== undefined) {
+                cleanProfile[field] = user.profile[field];
+            }
+        });
+        user.profile = cleanProfile;
+    }
+
+    return user;
+}
 
 const getAllUser = async (query: Record<string, unknown>) => {
     const userQueryBuilder = new QueryBuilder(User.find().select('-password -authentication'), query)
@@ -17,16 +115,18 @@ const getAllUser = async (query: Record<string, unknown>) => {
     const paginationInfo = await userQueryBuilder.getPaginationInfo()
     const totalUsers = await User.countDocuments()
 
+    const sanitizedUsers = users.map((u: any) => sanitizeUserProfile(u))
+
     return {
-        users,
+        users: sanitizedUsers,
         staticData: { totalUsers },
         meta: paginationInfo,
     }
 }
 
 const getSingleUser = async (id: string) => {
-    const result = await User.findById(id).select('-password -authentication')
-    return result
+    const result = await User.findById(id).lean().select('-password -authentication')
+    return result ? sanitizeUserProfile(result) : result
 }
 
 const deleteUser = async (id: string) => {
@@ -49,41 +149,100 @@ const updateProfile = async (
         throw new ApiError(StatusCodes.NOT_FOUND, 'User not found or deleted.')
     }
 
-    const updateQuery: Record<string, any> = {}
-    const isRejected = isExistUser.approvalStatus === APPROVAL_STATUS.REJECTED || isExistUser.profile?.approvalStatus === APPROVAL_STATUS.REJECTED;
+    const userRole = isExistUser.role
 
-    if (isRejected) {
-        payload.approvalStatus = APPROVAL_STATUS.RESUBMITTED;
-        payload.rejectionReason = '';
+    // Determine allowed and disallowed profile fields based on user role
+    let allowedProfileFields: string[] = []
+    let disallowedProfileFields: string[] = []
+
+    if (userRole === USER_ROLES.PROPERTY_MANAGER) {
+        allowedProfileFields = PROPERTY_MANAGER_PROFILE_FIELDS
+        disallowedProfileFields = SERVICE_PROVIDER_PROFILE_FIELDS.filter(
+            (f) => !PROPERTY_MANAGER_PROFILE_FIELDS.includes(f)
+        )
+    } else if (userRole === USER_ROLES.SERVICE_PROVIDER) {
+        allowedProfileFields = SERVICE_PROVIDER_PROFILE_FIELDS
+        disallowedProfileFields = PROPERTY_MANAGER_PROFILE_FIELDS.filter(
+            (f) => !SERVICE_PROVIDER_PROFILE_FIELDS.includes(f)
+        )
+    } else {
+        allowedProfileFields = [
+            ...PROPERTY_MANAGER_PROFILE_FIELDS,
+            ...SERVICE_PROVIDER_PROFILE_FIELDS,
+        ]
     }
 
-    let setFields: Record<string, any> = {};
+    const isRejected =
+        isExistUser.approvalStatus === APPROVAL_STATUS.REJECTED ||
+        isExistUser.profile?.approvalStatus === APPROVAL_STATUS.REJECTED
 
-    // Extract root user fields vs profile fields
-    const rootFields = ['firstName', 'lastName', 'username', 'email', 'contactNumber', 'phone', 'image', 'deviceToken', 'fcmToken', 'approvalStatus', 'rejectionReason'];
-    
+    if (isRejected) {
+        payload.approvalStatus = APPROVAL_STATUS.RESUBMITTED
+        payload.rejectionReason = ''
+    }
+
+    // Extract profile fields from payload sources
+    let incomingProfileData: Record<string, any> = {}
+
+    if (userRole === USER_ROLES.PROPERTY_MANAGER && payload.propertyManagerProfile && typeof payload.propertyManagerProfile === 'object') {
+        Object.assign(incomingProfileData, payload.propertyManagerProfile)
+    } else if (userRole === USER_ROLES.SERVICE_PROVIDER && payload.serviceProviderProfile && typeof payload.serviceProviderProfile === 'object') {
+        Object.assign(incomingProfileData, payload.serviceProviderProfile)
+    }
+
+    if (payload.profile && typeof payload.profile === 'object') {
+        Object.assign(incomingProfileData, payload.profile)
+    }
+
+    // Process flat payload keys as well
     Object.keys(payload).forEach((key) => {
-        if (key === 'profile' && payload.profile && typeof payload.profile === 'object') {
-            const profileObj = payload.profile as Record<string, any>;
-            Object.keys(profileObj).forEach((pKey) => {
-                setFields[`profile.${pKey}`] = profileObj[pKey];
-            });
-        } else if (rootFields.includes(key)) {
-            setFields[key] = payload[key];
-        } else {
-            // Put role-specific profile fields directly inside profile
-            setFields[`profile.${key}`] = payload[key];
+        if (!['profile', 'propertyManagerProfile', 'serviceProviderProfile'].includes(key)) {
+            if (allowedProfileFields.includes(key)) {
+                incomingProfileData[key] = payload[key]
+            }
         }
-    });
+    })
 
-    if (isRejected) {
-        setFields['approvalStatus'] = APPROVAL_STATUS.RESUBMITTED;
-        setFields['rejectionReason'] = '';
-        setFields['profile.approvalStatus'] = APPROVAL_STATUS.RESUBMITTED;
-        setFields['profile.rejectionReason'] = '';
+    const setFields: Record<string, any> = {}
+    const unsetFields: Record<string, any> = {}
+
+    // Root user fields
+    ROOT_USER_FIELDS.forEach((key) => {
+        if (payload[key] !== undefined) {
+            setFields[key] = payload[key]
+        }
+    })
+
+    // Allowed profile fields ONLY
+    allowedProfileFields.forEach((key) => {
+        if (incomingProfileData[key] !== undefined) {
+            setFields[`profile.${key}`] = incomingProfileData[key]
+        }
+    })
+
+    // Purge any disallowed profile fields stored in DB for this role
+    if (isExistUser.profile) {
+        disallowedProfileFields.forEach((key) => {
+            if ((isExistUser.profile as any)[key] !== undefined) {
+                unsetFields[`profile.${key}`] = ''
+            }
+        })
     }
 
-    updateQuery['$set'] = setFields;
+    if (isRejected) {
+        setFields['approvalStatus'] = APPROVAL_STATUS.RESUBMITTED
+        setFields['rejectionReason'] = ''
+        setFields['profile.approvalStatus'] = APPROVAL_STATUS.RESUBMITTED
+        setFields['profile.rejectionReason'] = ''
+    }
+
+    const updateQuery: Record<string, any> = {}
+    if (Object.keys(setFields).length > 0) {
+        updateQuery['$set'] = setFields
+    }
+    if (Object.keys(unsetFields).length > 0) {
+        updateQuery['$unset'] = unsetFields
+    }
 
     let updatedUser = await User.findOneAndUpdate(
         { _id: user.authId, status: { $ne: USER_STATUS.DELETED } },
@@ -96,14 +255,14 @@ const updateProfile = async (
     }
 
     // Recalculate profile completion percentage
-    const completion = calculateProfileCompletion(updatedUser);
+    const completion = calculateProfileCompletion(updatedUser)
     updatedUser = await User.findByIdAndUpdate(
         user.authId,
         { profileCompletionPercentage: completion },
         { new: true }
-    );
+    )
 
-    return updatedUser
+    return sanitizeUserProfile(updatedUser?.toObject())
 }
 
 const getProfile = async (user: JwtPayload) => {
@@ -115,7 +274,7 @@ const getProfile = async (user: JwtPayload) => {
         )
     }
 
-    return isExistUser
+    return sanitizeUserProfile(isExistUser)
 }
 
 const deleteMyAccount = async (user: JwtPayload) => {
@@ -140,3 +299,4 @@ export const UserServices = {
     getProfile,
     deleteMyAccount,
 }
+

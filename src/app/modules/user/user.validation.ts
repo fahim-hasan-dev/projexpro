@@ -19,6 +19,38 @@ export const propertyManagerProfileSchema = z.object({
   propertyTypes: z.array(z.string()).optional(),
 });
 
+export const serviceProviderProfileSchema = z.object({
+  streetAddress: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  zipCode: z.string().optional(),
+  bio: z.string().optional(),
+  skills: z.array(z.string()).optional(),
+  companyName: z.string().optional(),
+  officeAddress: z.string().optional(),
+  officeCity: z.string().optional(),
+  officeState: z.string().optional(),
+  officeZipCode: z.string().optional(),
+  officePhone: z.string().optional(),
+  taxId: z.string().optional(),
+  yearsInBusiness: z.number().optional(),
+  licenses: z.array(z.object({
+    licenseType: z.string().optional(),
+    licenseNumber: z.string().optional(),
+    dateIssued: z.union([z.string(), z.date()]).optional(),
+    stateIssued: z.string().optional(),
+    licenseDocument: z.string().optional(),
+  })).optional(),
+  governmentId: z.string().optional(),
+  proofOfInsurance: z.string().optional(),
+  documents: z.array(z.object({
+    title: z.string(),
+    fileUrl: z.string(),
+    type: z.string().optional(),
+  })).optional(),
+  isAccountPaused: z.boolean().optional(),
+});
+
 export const userSignupSchema = z.object({
   body: z.object({
     firstName: z.string().min(1, "First name is required"),
@@ -30,6 +62,8 @@ export const userSignupSchema = z.object({
     password: z.string().min(6, "Password must be at least 6 characters"),
     role: z.nativeEnum(USER_ROLES).optional(),
     propertyManagerProfile: propertyManagerProfileSchema.optional(),
+    serviceProviderProfile: serviceProviderProfileSchema.optional(),
+    profile: z.record(z.any()).optional(),
   })
 });
 
@@ -54,6 +88,8 @@ export const userUpdateSchema = z.object({
     verified: z.boolean().optional(),
     role: z.nativeEnum(USER_ROLES).optional(),
     propertyManagerProfile: propertyManagerProfileSchema.optional(),
+    serviceProviderProfile: serviceProviderProfileSchema.optional(),
+    profile: z.record(z.any()).optional(),
   })
 });
 
@@ -75,3 +111,4 @@ export const UserValidations = {
   updatePropertyManagerProfileSchema,
   changePasswordSchema,
 };
+

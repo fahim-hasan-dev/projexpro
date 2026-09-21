@@ -84,6 +84,9 @@ router.delete(
   validateRequest(AuthValidations.deleteAccount),
   AuthController.deleteAccount,
 )
+router.get('/check-username', AuthController.checkUsername)
+router.post('/check-username', AuthController.checkUsername)
+
 router.post('/access-token', AuthController.getAccessToken)
 
 router.post('/logout', AuthController.logOut)
