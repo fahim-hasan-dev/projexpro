@@ -17,16 +17,18 @@ const createCategory = async (payload: ICategory) => {
   return result;
 };
 
-// Get all categories
+// Get all categories (Initially returns only top-level parent categories)
 const getAllCategories = async (query: Record<string, unknown>) => {
   let filterQuery: Record<string, unknown> = { isActive: true };
 
-  // If query specifies parent, filter by parent ID; if parent="null", fetch top-level parent categories
-  if (query.parent !== undefined) {
+  // If query.parent is not provided, default to parent: null (top-level categories only)
+  if (query.parent === undefined) {
+    filterQuery.parent = null;
+  } else {
     if (query.parent === "null" || query.parent === null || query.parent === "") {
       filterQuery.parent = null;
     } else if (query.parent === "all") {
-      // fetch all categories without parent restriction
+      // Fetch all categories without parent restriction
     } else {
       filterQuery.parent = query.parent;
     }
@@ -71,15 +73,23 @@ const getSubCategoriesByParent = async (parentId: string) => {
   };
 };
 
-// Get single category details with parent populated
+// Get single category details with parent populated and sub-categories attached
 const getSingleCategory = async (id: string) => {
-  const result = await CategoryModel.findById(id).populate("parent", "name image icon description isActive");
+  const result = await CategoryModel.findById(id).populate("parent", "name image icon description isActive").lean();
 
   if (!result) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Category not found");
   }
 
-  return result;
+  const subCategories = await CategoryModel.find({
+    parent: id,
+    isActive: true,
+  }).lean();
+
+  return {
+    ...result,
+    subCategories,
+  };
 };
 
 // Update category or sub-category

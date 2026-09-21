@@ -436,6 +436,8 @@ const verifyAccount = async (
       name: `${isUserExist.firstName!} ${isUserExist.lastName!}`,
       email: isUserExist.email!,
       image: isUserExist.image!,
+      verified:isUserExist.verified,
+      approvalStatus:isUserExist.approvalStatus,
     }
 
     return authResponse(
@@ -520,7 +522,6 @@ const getAccessToken = async (token: string) => {
     throw new ApiError(StatusCodes.FORBIDDEN, 'Invalid Refresh Token')
   }
 }
-
 
 
 const resendOtpToPhoneOrEmail = async (
@@ -754,7 +755,6 @@ export const AuthServices = {
   verifyAccount,
   login,
   getAccessToken,
-
   resendOtpToPhoneOrEmail,
   deleteAccount,
   resendOtp,

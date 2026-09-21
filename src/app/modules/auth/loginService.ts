@@ -133,6 +133,8 @@ const handleLoginLogic = async (payload: ILoginData, isUserExist: IUser):Promise
     name: `${isUserExist.firstName!} ${isUserExist.lastName!}`,
     email: isUserExist.email!,
     image: isUserExist.image!,
+    verified: isUserExist.verified,
+    approvalStatus:isUserExist.approvalStatus,
   }
 
   return  authResponse(
