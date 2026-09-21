@@ -7,7 +7,8 @@ import { fileAndBodyProcessorUsingDiskStorage } from '../../middleware/processRe
 
 const router = express.Router()
 
-router.get('/check-username', AuthController.checkUsername)
+router.get('/check-username', AuthController.checkUserName)
+router.get('/check-userName', AuthController.checkUserName)
 
 router.get(
   '/me',

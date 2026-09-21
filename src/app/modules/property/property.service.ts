@@ -100,9 +100,9 @@ const getAllProperties = async (query: Record<string, unknown>, userId?: string,
 
   const propertyQuery = new QueryBuilder(
     PropertyModel.find(baseQuery)
-      .populate("user", "firstName lastName email contact profileImage totalUnitsUsed")
-      .populate("category", "name")
-      .populate("subCategory", "name"),
+      .populate("user", "firstName lastName userName email phone contactNumber image role totalUnitsUsed")
+      .populate("category", "name image")
+      .populate("subCategory", "name image"),
     query
   )
     .search(searchFields)
@@ -125,9 +125,9 @@ const getAllProperties = async (query: Record<string, unknown>, userId?: string,
 // Get single property by ID
 const getSingleProperty = async (id: string, userId?: string, isManagerOnly: boolean = false) => {
   const property = await PropertyModel.findOne({ _id: id, isDeleted: false })
-    .populate("user", "firstName lastName email contact profileImage totalUnitsUsed")
-    .populate("category", "name")
-    .populate("subCategory", "name");
+    .populate("user", "firstName lastName userName email phone contactNumber image role totalUnitsUsed")
+    .populate("category", "name image")
+    .populate("subCategory", "name image");
 
   if (!property) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Property not found");
@@ -191,9 +191,9 @@ const updateProperty = async (id: string, userId: string, payload: Partial<IProp
   }
 
   const result = await PropertyModel.findByIdAndUpdate(id, payload, { new: true })
-    .populate("user", "firstName lastName email contact profileImage totalUnitsUsed")
-    .populate("category", "name")
-    .populate("subCategory", "name");
+    .populate("user", "firstName lastName userName email phone contactNumber image role totalUnitsUsed")
+    .populate("category", "name image")
+    .populate("subCategory", "name image");
 
   // Sync owner's totalUnitsUsed
   await syncUserTotalUnits(propertyOwnerId);

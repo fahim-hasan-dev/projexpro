@@ -34,7 +34,7 @@ const getAllCategories = async (query: Record<string, unknown>) => {
   }
 
   const categoryQueryBuilder = new QueryBuilder(
-    CategoryModel.find(filterQuery).populate("parent"),
+    CategoryModel.find(filterQuery).populate("parent", "name image icon description isActive"),
     query
   )
     .filter()
@@ -73,7 +73,7 @@ const getSubCategoriesByParent = async (parentId: string) => {
 
 // Get single category details with parent populated
 const getSingleCategory = async (id: string) => {
-  const result = await CategoryModel.findById(id).populate("parent");
+  const result = await CategoryModel.findById(id).populate("parent", "name image icon description isActive");
 
   if (!result) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Category not found");

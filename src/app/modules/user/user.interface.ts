@@ -80,7 +80,7 @@ export type IUser = {
     _id: Types.ObjectId;
     firstName: string;
     lastName: string;
-    username?: string;
+    userName?: string;
     email: string;
     contactNumber?: string;
     phone?: string;

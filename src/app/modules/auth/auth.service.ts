@@ -67,12 +67,13 @@ export const createUser = async (payload: IUser & Record<string, any>) => {
       payload.profile = cleanProfile as any
     }
 
-    if (!payload.username) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Username is required.')
+    const inputUserName = payload.userName || payload.username
+    if (!inputUserName) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'User name is required.')
     }
-    payload.username = payload.username.toLowerCase().trim()
+    payload.userName = inputUserName.toLowerCase().trim()
 
-    // 1. Check if user email or username already exists
+    // 1. Check if user email or userName already exists
     const isEmailExist = await User.findOne({
       email: payload.email,
       status: { $nin: [USER_STATUS.DELETED] },
@@ -86,14 +87,14 @@ export const createUser = async (payload: IUser & Record<string, any>) => {
     }
 
     const isUsernameExist = await User.findOne({
-      username: payload.username,
+      userName: payload.userName,
       status: { $nin: [USER_STATUS.DELETED] },
     }).session(session)
 
     if (isUsernameExist) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
-        `An account with username '${payload.username}' already exists.`,
+        `An account with userName '${payload.userName}' already exists.`,
       )
     }
 
@@ -728,19 +729,20 @@ const changePassword = async (
   return { message: 'Password changed successfully' }
 }
 
-const checkUsername = async (username: string) => {
-  if (!username || !username.trim()) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Username query parameter is required.')
+const checkUserName = async (userName: string) => {
+  if (!userName || !userName.trim()) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'userName parameter is required.')
   }
 
-  const formattedUsername = username.toLowerCase().trim()
+  const formattedUserName = userName.toLowerCase().trim()
   const isExist = await User.findOne({
-    username: formattedUsername,
+    userName: formattedUserName,
     status: { $nin: [USER_STATUS.DELETED] },
   }).lean()
 
   return {
-    username: formattedUsername,
+    userName: formattedUserName,
+    username: formattedUserName,
     isAvailable: !isExist,
     exists: !!isExist,
   }
@@ -759,5 +761,6 @@ export const AuthServices = {
   changePassword,
   createUser,
   adminLogin,
-  checkUsername,
+  checkUserName,
+  checkUsername: checkUserName,
 }

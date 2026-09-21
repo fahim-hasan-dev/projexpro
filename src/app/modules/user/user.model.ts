@@ -85,9 +85,9 @@ const UserSchema = new Schema(
             type: String,
             required: true,
         },
-        username: {
+        userName: {
             type: String,
-            required: [true, 'Username is required'],
+            required: [true, 'User name is required'],
             unique: true,
             trim: true,
             lowercase: true,
@@ -299,9 +299,9 @@ UserSchema.pre("save", async function (next) {
 
         this.profileCompletionPercentage = calculateProfileCompletion(this);
 
-        if (this.isModified("username") && this.username) {
+        if (this.isModified("userName") && (this as any).userName) {
             const isExistUsername = await User.findOne({
-                username: this.username.toLowerCase().trim(),
+                userName: (this as any).userName.toLowerCase().trim(),
                 status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },
                 _id: { $ne: this._id },
             });

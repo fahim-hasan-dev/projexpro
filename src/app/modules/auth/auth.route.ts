@@ -84,8 +84,10 @@ router.delete(
   validateRequest(AuthValidations.deleteAccount),
   AuthController.deleteAccount,
 )
-router.get('/check-username', AuthController.checkUsername)
-router.post('/check-username', AuthController.checkUsername)
+router.get('/check-username', AuthController.checkUserName)
+router.post('/check-username', AuthController.checkUserName)
+router.get('/check-userName', AuthController.checkUserName)
+router.post('/check-userName', AuthController.checkUserName)
 
 router.post('/access-token', AuthController.getAccessToken)
 

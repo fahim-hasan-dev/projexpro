@@ -36,7 +36,7 @@ const getPayments = async (query: Record<string, unknown>) => {
 
 // get payment by id
 const getPaymentById = async (id: string) => {
-  return await Payment.findById(id).populate('referenceId');
+  return await Payment.findById(id).populate('referenceId', 'invoiceNo jobId totalAmount status requestNo name title');
 };
 
 export const PaymentService = {

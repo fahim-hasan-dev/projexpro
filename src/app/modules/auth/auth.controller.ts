@@ -144,15 +144,15 @@ const deleteAccount = catchAsync(async (req: Request, res: Response) => {
   })
 })
 
-const checkUsername = catchAsync(async (req: Request, res: Response) => {
-  const username = (req.query.username || req.body.username) as string
-  const result = await AuthServices.checkUsername(username)
+const checkUserName = catchAsync(async (req: Request, res: Response) => {
+  const userName = (req.query.userName || req.query.username || req.body.userName || req.body.username) as string
+  const result = await AuthServices.checkUserName(userName)
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
     message: result.isAvailable
-      ? 'Username is available'
-      : 'Username is already taken',
+      ? 'userName is available'
+      : 'userName is already taken',
     data: result,
   })
 })
@@ -180,6 +180,7 @@ export const AuthController = {
   createUser,
   deleteAccount,
   adminLogin,
-  checkUsername,
+  checkUserName,
+  checkUsername: checkUserName,
   logOut,
 }

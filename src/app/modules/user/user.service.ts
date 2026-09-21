@@ -53,7 +53,7 @@ export const SERVICE_PROVIDER_PROFILE_FIELDS = [
 export const ROOT_USER_FIELDS = [
     'firstName',
     'lastName',
-    'username',
+    'userName',
     'email',
     'contactNumber',
     'phone',

@@ -55,7 +55,7 @@ export const userSignupSchema = z.object({
   body: z.object({
     firstName: z.string().min(1, "First name is required"),
     lastName: z.string().min(1, "Last name is required"),
-    username: z.string().min(1, "Username is required").optional(),
+    userName: z.string({ required_error: "User name is required" }).min(2, "User name must be at least 2 characters").toLowerCase().trim(),
     email: z.string().email("Invalid email address").toLowerCase().trim(),
     contactNumber: z.string().optional(),
     phone: z.string().optional(),
@@ -79,7 +79,7 @@ export const userUpdateSchema = z.object({
     email: z.string().email("Invalid email address").trim().toLowerCase().optional(),
     firstName: z.string().min(1, "First name is required").optional(),
     lastName: z.string().min(1, "Last name is required").optional(),
-    username: z.string().min(1, "Username is required").optional(),
+    userName: z.string().min(2, "User name must be at least 2 characters").toLowerCase().trim().optional(),
     contactNumber: z.string().optional(),
     phone: z.string().optional(),
     image: z.string().url("Invalid image URL").optional(),

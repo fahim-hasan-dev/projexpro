@@ -135,7 +135,7 @@ const createUserZodSchema = z.object({
   body: z.object({
     firstName: z.string({ required_error: 'First name is required' }).optional(),
     lastName: z.string({ required_error: 'Last name is required' }).optional(),
-    username: z.string().optional(),
+    userName: z.string({ required_error: 'User name is required' }).min(2, 'User name must be at least 2 characters'),
     email: z.string({ required_error: 'Email is required' }).email(),
     contactNumber: z.string().optional(),
     phone: z.string().optional(),

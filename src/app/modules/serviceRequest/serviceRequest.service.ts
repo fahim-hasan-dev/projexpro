@@ -63,13 +63,14 @@ const getAllServiceRequests = async (query: Record<string, unknown>, userId: str
     ServiceRequestModel.find(baseQuery)
       .populate({
         path: "property",
+        select: "name title propertyType address totalUnits image category subCategory",
         populate: [
-          { path: "category", select: "name" },
-          { path: "subCategory", select: "name" },
+          { path: "category", select: "name image" },
+          { path: "subCategory", select: "name image" },
         ],
       })
-      .populate("user", "firstName lastName email contact profileImage")
-      .populate("assignedProvider", "firstName lastName email contact profileImage serviceProviderProfile"),
+      .populate("user", "firstName lastName userName email phone contactNumber image role")
+      .populate("assignedProvider", "firstName lastName userName email phone contactNumber image role profile"),
     query
   )
     .search(searchFields)
@@ -94,13 +95,14 @@ const getSingleServiceRequest = async (id: string, userId: string, role: string)
   const request = await ServiceRequestModel.findOne({ _id: id, isDeleted: false })
     .populate({
       path: "property",
+      select: "name title propertyType address totalUnits image category subCategory",
       populate: [
-        { path: "category", select: "name" },
-        { path: "subCategory", select: "name" },
+        { path: "category", select: "name image" },
+        { path: "subCategory", select: "name image" },
       ],
     })
-    .populate("user", "firstName lastName email contact profileImage")
-    .populate("assignedProvider", "firstName lastName email contact profileImage serviceProviderProfile");
+    .populate("user", "firstName lastName userName email phone contactNumber image role")
+    .populate("assignedProvider", "firstName lastName userName email phone contactNumber image role profile");
 
   if (!request) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Service request not found");
@@ -168,13 +170,14 @@ const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>)
   const result = await ServiceRequestModel.findByIdAndUpdate(id, updateData, { new: true })
     .populate({
       path: "property",
+      select: "name title propertyType address totalUnits image category subCategory",
       populate: [
-        { path: "category", select: "name" },
-        { path: "subCategory", select: "name" },
+        { path: "category", select: "name image" },
+        { path: "subCategory", select: "name image" },
       ],
     })
-    .populate("user", "firstName lastName email contact profileImage")
-    .populate("assignedProvider", "firstName lastName email contact profileImage serviceProviderProfile");
+    .populate("user", "firstName lastName userName email phone contactNumber image role")
+    .populate("assignedProvider", "firstName lastName userName email phone contactNumber image role profile");
 
   if (!result) return result;
 
@@ -238,9 +241,9 @@ const updateStatus = async (id: string, userId: string, role: string, status: RE
   }
 
   const result = await ServiceRequestModel.findByIdAndUpdate(id, { status }, { new: true })
-    .populate("property")
-    .populate("user", "firstName lastName email contact")
-    .populate("assignedProvider", "firstName lastName email contact");
+    .populate("property", "name title propertyType address totalUnits image")
+    .populate("user", "firstName lastName userName email phone contactNumber image role")
+    .populate("assignedProvider", "firstName lastName userName email phone contactNumber image role profile");
 
   if (!result) return result;
 

@@ -14,9 +14,9 @@ import { USER_ROLES } from "../../../enum/user";
 // Generate or retrieve invoice for a completed Service Request
 const createInvoiceFromServiceRequest = async (serviceRequestId: string | Types.ObjectId) => {
   const serviceRequest = await ServiceRequestModel.findOne({ _id: serviceRequestId, isDeleted: false })
-    .populate("property")
-    .populate("user")
-    .populate("assignedProvider");
+    .populate("property", "name title propertyType address totalUnits image")
+    .populate("user", "firstName lastName userName email phone contactNumber image role")
+    .populate("assignedProvider", "firstName lastName userName email phone contactNumber image role profile");
 
   if (!serviceRequest) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Service request not found");
@@ -26,14 +26,15 @@ const createInvoiceFromServiceRequest = async (serviceRequestId: string | Types.
   const existingInvoice = await InvoiceModel.findOne({ serviceRequest: serviceRequest._id })
     .populate({
       path: "property",
+      select: "name title propertyType address totalUnits image category subCategory",
       populate: [
-        { path: "category", select: "name" },
-        { path: "subCategory", select: "name" },
+        { path: "category", select: "name image" },
+        { path: "subCategory", select: "name image" },
       ],
     })
-    .populate("serviceRequest")
-    .populate("propertyManager", "firstName lastName email contact profileImage")
-    .populate("serviceProvider", "firstName lastName email contact profileImage");
+    .populate("serviceRequest", "requestNo issueTitle status urgencyLevel basePayment finalPayout property user assignedProvider createdAt")
+    .populate("propertyManager", "firstName lastName userName email phone contactNumber image role")
+    .populate("serviceProvider", "firstName lastName userName email phone contactNumber image role profile");
 
   if (existingInvoice) {
     return existingInvoice;
@@ -79,14 +80,15 @@ const createInvoiceFromServiceRequest = async (serviceRequestId: string | Types.
   const populatedInvoice = await InvoiceModel.findById(newInvoice._id)
     .populate({
       path: "property",
+      select: "name title propertyType address totalUnits image category subCategory",
       populate: [
-        { path: "category", select: "name" },
-        { path: "subCategory", select: "name" },
+        { path: "category", select: "name image" },
+        { path: "subCategory", select: "name image" },
       ],
     })
-    .populate("serviceRequest")
-    .populate("propertyManager", "firstName lastName email contact profileImage")
-    .populate("serviceProvider", "firstName lastName email contact profileImage");
+    .populate("serviceRequest", "requestNo issueTitle status urgencyLevel basePayment finalPayout property user assignedProvider createdAt")
+    .populate("propertyManager", "firstName lastName userName email phone contactNumber image role")
+    .populate("serviceProvider", "firstName lastName userName email phone contactNumber image role profile");
 
   // Send notification to Property Manager
   try {
@@ -109,8 +111,8 @@ const createInvoiceFromServiceRequest = async (serviceRequestId: string | Types.
 // Create Stripe Checkout Session for Invoice Payment (Pay Now)
 const createCheckoutSessionForInvoice = async (invoiceId: string, userId: string) => {
   const invoice = await InvoiceModel.findById(invoiceId)
-    .populate("propertyManager")
-    .populate("serviceRequest");
+    .populate("propertyManager", "firstName lastName userName email phone contactNumber image role")
+    .populate("serviceRequest", "requestNo issueTitle status urgencyLevel basePayment finalPayout");
 
   if (!invoice) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Invoice not found");
@@ -165,14 +167,15 @@ const getSingleInvoice = async (id: string, userId: string, role: string) => {
   const invoice = await InvoiceModel.findById(id)
     .populate({
       path: "property",
+      select: "name title propertyType address totalUnits image category subCategory",
       populate: [
-        { path: "category", select: "name" },
-        { path: "subCategory", select: "name" },
+        { path: "category", select: "name image" },
+        { path: "subCategory", select: "name image" },
       ],
     })
-    .populate("serviceRequest")
-    .populate("propertyManager", "firstName lastName email contact profileImage")
-    .populate("serviceProvider", "firstName lastName email contact profileImage");
+    .populate("serviceRequest", "requestNo issueTitle status urgencyLevel basePayment finalPayout property user assignedProvider createdAt")
+    .populate("propertyManager", "firstName lastName userName email phone contactNumber image role")
+    .populate("serviceProvider", "firstName lastName userName email phone contactNumber image role profile");
 
   if (!invoice) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Invoice not found");
@@ -190,14 +193,15 @@ const getInvoiceByServiceRequest = async (serviceRequestId: string, userId: stri
   let invoice = await InvoiceModel.findOne({ serviceRequest: serviceRequestId })
     .populate({
       path: "property",
+      select: "name title propertyType address totalUnits image category subCategory",
       populate: [
-        { path: "category", select: "name" },
-        { path: "subCategory", select: "name" },
+        { path: "category", select: "name image" },
+        { path: "subCategory", select: "name image" },
       ],
     })
-    .populate("serviceRequest")
-    .populate("propertyManager", "firstName lastName email contact profileImage")
-    .populate("serviceProvider", "firstName lastName email contact profileImage");
+    .populate("serviceRequest", "requestNo issueTitle status urgencyLevel basePayment finalPayout property user assignedProvider createdAt")
+    .populate("propertyManager", "firstName lastName userName email phone contactNumber image role")
+    .populate("serviceProvider", "firstName lastName userName email phone contactNumber image role profile");
 
   // If not created yet, check if service request is completed and generate it
   if (!invoice) {
@@ -221,13 +225,14 @@ const getMyInvoices = async (userId: string, query: Record<string, unknown>) => 
     InvoiceModel.find({ propertyManager: userId })
       .populate({
         path: "property",
+        select: "name title propertyType address totalUnits image category subCategory",
         populate: [
-          { path: "category", select: "name" },
-          { path: "subCategory", select: "name" },
+          { path: "category", select: "name image" },
+          { path: "subCategory", select: "name image" },
         ],
       })
-      .populate("serviceRequest")
-      .populate("serviceProvider", "firstName lastName email contact profileImage"),
+      .populate("serviceRequest", "requestNo issueTitle status urgencyLevel basePayment finalPayout property user assignedProvider createdAt")
+      .populate("serviceProvider", "firstName lastName userName email phone contactNumber image role profile"),
     query
   )
     .search(searchFields)
@@ -254,14 +259,15 @@ const getAllInvoicesForAdmin = async (query: Record<string, unknown>) => {
     InvoiceModel.find()
       .populate({
         path: "property",
+        select: "name title propertyType address totalUnits image category subCategory",
         populate: [
-          { path: "category", select: "name" },
-          { path: "subCategory", select: "name" },
+          { path: "category", select: "name image" },
+          { path: "subCategory", select: "name image" },
         ],
       })
-      .populate("serviceRequest")
-      .populate("propertyManager", "firstName lastName email contact profileImage")
-      .populate("serviceProvider", "firstName lastName email contact profileImage"),
+      .populate("serviceRequest", "requestNo issueTitle status urgencyLevel basePayment finalPayout property user assignedProvider createdAt")
+      .populate("propertyManager", "firstName lastName userName email phone contactNumber image role")
+      .populate("serviceProvider", "firstName lastName userName email phone contactNumber image role profile"),
     query
   )
     .search(searchFields)

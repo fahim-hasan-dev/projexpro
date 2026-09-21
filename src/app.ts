@@ -8,6 +8,7 @@ import requestIp from 'request-ip';
 import rateLimit from 'express-rate-limit';
 import ApiError from "./errors/ApiError";
 import compression from "compression";
+import handleStripeWebhook from "./stripe/handleStripeWebhook";
 const app = express();
 
 const limiter = rateLimit({
@@ -34,7 +35,13 @@ app.use(Morgan.errorHandler);
 
 //body parser
 app.use(cors());
-app.use('/api/v1/webhook', express.raw({ type: 'application/json' })); // Global webhook path
+
+// Stripe Webhook endpoints with raw body parser (supports both /webhook and /api/v1/webhook)
+app.post('/webhook',
+  express.raw({ type: 'application/json' }),
+  handleStripeWebhook
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(requestIp.mw());

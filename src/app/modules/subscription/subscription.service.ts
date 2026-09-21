@@ -56,7 +56,7 @@ const subscriptionsFromDB = async (query: Record<string, unknown>) => {
             },
             {
                 path: "user",
-                select: "firstName lastName email image role profile totalUnitsUsed"
+                select: "firstName lastName userName email phone image role totalUnitsUsed"
             }
         ])
         .select("-createdAt -updatedAt -__v")
