@@ -22,6 +22,30 @@ import { IUser } from '../user/user.interface'
 import { PROPERTY_MANAGER_PROFILE_FIELDS, SERVICE_PROVIDER_PROFILE_FIELDS } from '../user/user.service'
 import mongoose from 'mongoose'
 
+const getAccountByQuery = async (query: any, includeDeleted = false) => {
+  const statusFilter = includeDeleted 
+    ? { status: { $nin: [USER_STATUS.DELETED] } } 
+    : { status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] } }
+  
+  let accountData: any = await User.findOne({ ...query, ...statusFilter }).select('+authentication +password')
+  let AccountModel: any = User
+  if (!accountData) {
+    accountData = await Admin.findOne({ ...query, ...statusFilter }).select('+authentication +password')
+    AccountModel = Admin
+  }
+  return { accountData, AccountModel }
+}
+
+const getAccountById = async (id: string | mongoose.Types.ObjectId) => {
+  let accountData: any = await User.findById(id).select('+authentication +password')
+  let AccountModel: any = User
+  if (!accountData) {
+    accountData = await Admin.findById(id).select('+authentication +password')
+    AccountModel = Admin
+  }
+  return { accountData, AccountModel }
+}
+
 export const createUser = async (payload: IUser & Record<string, any>) => {
   payload.email = payload.email?.toLowerCase().trim()
   const session = await mongoose.startSession()
@@ -257,12 +281,10 @@ const forgetPassword = async (email?: string, phone?: string) => {
   const query = email
     ? { email: email.toLocaleLowerCase().trim() }
     : { phone: phone }
-  const isUserExist = await User.findOne({
-    ...query,
-    status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },
-  })
+  
+  const { accountData, AccountModel } = await getAccountByQuery(query)
 
-  if (!isUserExist) {
+  if (!accountData) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'No account found with this email or phone',
@@ -282,8 +304,8 @@ const forgetPassword = async (email?: string, phone?: string) => {
     wrongLoginAttempts: 0,
   }
 
-  await User.findByIdAndUpdate(
-    isUserExist._id,
+  await AccountModel.findByIdAndUpdate(
+    accountData._id,
     {
       $set: { authentication: authentication },
     },
@@ -293,8 +315,8 @@ const forgetPassword = async (email?: string, phone?: string) => {
   // Send OTP to user
   if (email) {
     const forgetPasswordEmailTemplate = emailTemplate.resetPassword({
-      name: `${isUserExist.firstName} ${isUserExist.lastName}`,
-      email: isUserExist.email,
+      name: `${accountData.firstName} ${accountData.lastName}`,
+      email: accountData.email,
       otp,
     })
 
@@ -321,19 +343,16 @@ const resetPassword = async (resetToken: string, payload: IResetPassword) => {
     )
   }
 
-  const isUserExist = await User.findById(isTokenExist.user)
-    .select('+authentication')
-    .lean()
-  console.log(isUserExist)
+  const { accountData, AccountModel } = await getAccountById(isTokenExist.user)
 
-  if (!isUserExist) {
+  if (!accountData) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Requested user not found, please try again or contact support.',
     )
   }
 
-  const { authentication } = isUserExist
+  const { authentication } = accountData
   if (!authentication?.resetPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -367,8 +386,8 @@ const resetPassword = async (resetToken: string, payload: IResetPassword) => {
     },
   }
 
-  await User.findByIdAndUpdate(
-    isUserExist._id,
+  await AccountModel.findByIdAndUpdate(
+    accountData._id,
     { $set: updatedUserData },
     { new: true },
   )
@@ -384,21 +403,19 @@ const verifyAccount = async (
   if (!onetimeCode) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'OTP is required.')
   }
-  const isUserExist = await User.findOne({
-    email: email.toLowerCase().trim(),
-    status: { $nin: [USER_STATUS.DELETED] },
-  })
-    .select('+password +authentication')
-    .lean()
+  const { accountData, AccountModel } = await getAccountByQuery(
+    { email: email.toLowerCase().trim() },
+    true
+  )
 
-  if (!isUserExist) {
+  if (!accountData) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       `No account found with this ${email}, please register first.`,
     )
   }
 
-  const { authentication } = isUserExist
+  const { authentication } = accountData
 
   //check the otp
   if (authentication?.oneTimeCode !== onetimeCode) {
@@ -417,32 +434,32 @@ const verifyAccount = async (
   }
 
   //either newly created user or existing user
-  if (!isUserExist.verified) {
-    await User.findByIdAndUpdate(
-      isUserExist._id,
+  if (!accountData.verified) {
+    await AccountModel.findByIdAndUpdate(
+      accountData._id,
       { $set: { verified: true } },
       { new: true },
     )
 
     const tokens = AuthHelper.createToken(
-      isUserExist._id,
-      isUserExist.role,
-      isUserExist.firstName + ' ' + isUserExist.lastName,
-      isUserExist.email,
+      accountData._id,
+      accountData.role,
+      accountData.firstName + ' ' + accountData.lastName,
+      accountData.email,
     )
     const userInfo = {
-      id: isUserExist._id,
-      role: isUserExist.role,
-      name: `${isUserExist.firstName!} ${isUserExist.lastName!}`,
-      email: isUserExist.email!,
-      image: isUserExist.image!,
-      verified:isUserExist.verified,
-      approvalStatus:isUserExist.approvalStatus,
+      id: accountData._id,
+      role: accountData.role,
+      name: `${accountData.firstName!} ${accountData.lastName!}`,
+      email: accountData.email!,
+      image: accountData.image!,
+      verified:accountData.verified,
+      approvalStatus:accountData.approvalStatus,
     }
 
     return authResponse(
       StatusCodes.OK,
-      `Welcome ${isUserExist.firstName} ${isUserExist.lastName} to our platform.`,
+      `Welcome ${accountData.firstName} ${accountData.lastName} to our platform.`,
       undefined,
       tokens.accessToken,
       tokens.refreshToken,
@@ -450,8 +467,8 @@ const verifyAccount = async (
       userInfo,
     )
   } else {
-    await User.findByIdAndUpdate(
-      isUserExist._id,
+    await AccountModel.findByIdAndUpdate(
+      accountData._id,
       {
         $set: {
           authentication: {
@@ -469,7 +486,7 @@ const verifyAccount = async (
 
     const token = await Token.create({
       token: cryptoToken(),
-      user: isUserExist._id,
+      user: accountData._id,
       expireAt: new Date(Date.now() + 5 * 60 * 1000), // 15 minutes
     })
     console.log(token.token)
@@ -530,12 +547,10 @@ const resendOtpToPhoneOrEmail = async (
   phone?: string,
 ) => {
   const query = email ? { email: email } : { phone: phone }
-  const isUserExist = await User.findOne({
-    ...query,
-    status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },
-  }).select('+authentication')
+  
+  const { accountData, AccountModel } = await getAccountByQuery(query)
 
-  if (!isUserExist) {
+  if (!accountData) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       `No account found with this ${email ? 'email' : 'phone'}`,
@@ -543,7 +558,7 @@ const resendOtpToPhoneOrEmail = async (
   }
 
   // Check the request count
-  const { authentication } = isUserExist
+  const { authentication } = accountData
   if (authentication?.requestCount! >= 5) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -564,14 +579,14 @@ const resendOtpToPhoneOrEmail = async (
   // Send OTP to user
   if (email) {
     const forgetPasswordEmailTemplate = emailTemplate.resendOtp({
-      email: isUserExist.email,
-      name: `${isUserExist.firstName} ${isUserExist.lastName}`,
+      email: accountData.email,
+      name: `${accountData.firstName} ${accountData.lastName}`,
       otp,
       type: authType,
     })
 
-    await User.findByIdAndUpdate(
-      isUserExist._id,
+    await AccountModel.findByIdAndUpdate(
+      accountData._id,
       {
         $set: { authentication: updatedAuthentication },
       },
@@ -583,8 +598,8 @@ const resendOtpToPhoneOrEmail = async (
 
   if (phone) {
     // Implement this feature using aws sns
-    await User.findByIdAndUpdate(
-      isUserExist._id,
+    await AccountModel.findByIdAndUpdate(
+      accountData._id,
       {
         $set: { authentication: updatedAuthentication },
       },
@@ -595,23 +610,23 @@ const resendOtpToPhoneOrEmail = async (
 
 const deleteAccount = async (user: JwtPayload, password: string) => {
   const { authId } = user
-  const isUserExist = await User.findById(authId).select('+password')
+  const { accountData, AccountModel } = await getAccountById(authId)
 
-  if (!isUserExist) {
+  if (!accountData) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Failed to delete account. Please try again.',
     )
   }
 
-  if (isUserExist.status === USER_STATUS.DELETED) {
+  if (accountData.status === USER_STATUS.DELETED) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       'Requested user is already deleted.',
     )
   }
 
-  const isPasswordMatched = await bcrypt.compare(password, isUserExist.password)
+  const isPasswordMatched = await bcrypt.compare(password, accountData.password)
 
   if (!isPasswordMatched) {
     throw new ApiError(
@@ -620,7 +635,7 @@ const deleteAccount = async (user: JwtPayload, password: string) => {
     )
   }
 
-  const deletedData = await User.findByIdAndUpdate(authId, {
+  const deletedData = await AccountModel.findByIdAndUpdate(authId, {
     $set: { status: USER_STATUS.DELETED },
   })
 
@@ -635,19 +650,16 @@ const resendOtp = async (
   email: string,
   authType: 'createAccount' | 'resetPassword',
 ) => {
-  const isUserExist = await User.findOne({
-    email: email.toLowerCase().trim(),
-    status: { $in: [USER_STATUS.ACTIVE, USER_STATUS.RESTRICTED] },
-  }).select('+authentication')
+  const { accountData, AccountModel } = await getAccountByQuery({ email: email.toLowerCase().trim() })
 
-  if (!isUserExist) {
+  if (!accountData) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       `No account found with this ${email}, please try again.`,
     )
   }
 
-  const { authentication } = isUserExist
+  const { authentication } = accountData
 
   const otp = generateOtp()
   const authenticationPayload = {
@@ -665,8 +677,8 @@ const resendOtp = async (
     )
   }
 
-  await User.findByIdAndUpdate(
-    isUserExist._id,
+  await AccountModel.findByIdAndUpdate(
+    accountData._id,
     {
       $set: { authentication: authenticationPayload },
     },
@@ -677,7 +689,7 @@ const resendOtp = async (
   if (email) {
     const forgetPasswordEmailTemplate = emailTemplate.resendOtp({
       email: email,
-      name: `${isUserExist.firstName} ${isUserExist.lastName}`,
+      name: `${accountData.firstName} ${accountData.lastName}`,
       otp,
       type: authType,
     })
@@ -695,19 +707,16 @@ const changePassword = async (
   currentPassword: string,
   newPassword: string,
 ) => {
-  // Find the user with password field
-  const isUserExist = await User.findById(user.authId)
-    .select('+password')
-    .lean()
+  const { accountData, AccountModel } = await getAccountById(user.authId)
 
-  if (!isUserExist) {
+  if (!accountData) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found')
   }
 
   // Check if current password matches
   const isPasswordMatch = await AuthHelper.isPasswordMatched(
     currentPassword,
-    isUserExist.password as string,
+    accountData.password as string,
   )
 
   if (!isPasswordMatch) {
@@ -721,7 +730,7 @@ const changePassword = async (
   )
 
   // Update the password
-  await User.findByIdAndUpdate(
+  await AccountModel.findByIdAndUpdate(
     user.authId,
     { password: hashedPassword },
     { new: true },
