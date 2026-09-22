@@ -43,11 +43,7 @@ export const serviceProviderProfileSchema = z.object({
   })).optional(),
   governmentId: z.string().optional(),
   proofOfInsurance: z.string().optional(),
-  documents: z.array(z.object({
-    title: z.string(),
-    fileUrl: z.string(),
-    type: z.string().optional(),
-  })).optional(),
+  documents: z.array(z.string()).optional(),
   isAccountPaused: z.boolean().optional(),
 });
 

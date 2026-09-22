@@ -28,25 +28,31 @@ class QueryBuilder<T> {
   }
 
 // Filtering
-filter() {
-  const queryObj = { ...this.query }
-  const excludeFields = [
-    'searchTerm',
-    'sort',
-    'page',
-    'limit',
-    'fields',
-    'withLocked',
-    'showHidden',
-    'download',
-  ]
-  excludeFields.forEach(el => delete queryObj[el])
+  filter() {
+    const queryObj = { ...this.query }
+    const excludeFields = [
+      'searchTerm',
+      'sort',
+      'page',
+      'limit',
+      'fields',
+      'withLocked',
+      'showHidden',
+      'download',
+    ]
+    excludeFields.forEach(el => delete queryObj[el])
 
-  const filters: Record<string, any> = cleanObject(queryObj)
+    const filters: Record<string, any> = cleanObject(queryObj)
 
-  this.modelQuery = this.modelQuery.find(filters as FilterQuery<T>)
-  return this
-}
+    for (const key in filters) {
+      if (typeof filters[key] === 'string' && filters[key].includes(',')) {
+        filters[key] = { $in: filters[key].split(',') }
+      }
+    }
+
+    this.modelQuery = this.modelQuery.find(filters as FilterQuery<T>)
+    return this
+  }
 
 
 

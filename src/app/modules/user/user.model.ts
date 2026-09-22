@@ -189,14 +189,7 @@ const UserSchema = new Schema(
                 ],
                 governmentId: { type: String, default: "" },
                 proofOfInsurance: { type: String, default: "" },
-                documents: [
-                    {
-                        title: { type: String, trim: true },
-                        fileUrl: { type: String, trim: true },
-                        type: { type: String, trim: true },
-                        _id: false,
-                    },
-                ],
+                documents: { type: Array<string>, default: [] },
                 isAccountPaused: { type: Boolean, default: false },
                 approvalStatus: {
                     type: String,

@@ -28,7 +28,7 @@ export type IServiceProviderProfile = {
     licenses?: ILicenseInformation[];
     governmentId?: string;
     proofOfInsurance?: string;
-    documents?: { title: string; fileUrl: string; type?: string }[];
+    documents?:string[];
     isAccountPaused?: boolean;
     approvalStatus?: APPROVAL_STATUS;
     rejectionReason?: string;
