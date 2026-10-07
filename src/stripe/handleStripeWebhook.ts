@@ -116,7 +116,7 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                     const currentPeriodStart = new Date(sub.current_period_start * 1000);
                     const currentPeriodEnd = new Date(sub.current_period_end * 1000);
 
-                    const isActive = sub.status === 'active' || sub.status === 'trialing';
+                    const isActive = ['active', 'trialing', 'past_due'].includes(sub.status);
                     let statusStr = isActive ? (sub.cancel_at_period_end ? 'cancel_at_period_end' : 'active') : 'expired';
 
                     await User.findByIdAndUpdate(user._id, {
@@ -203,7 +203,7 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                     const subId = invoice.subscription as string;
                     await Subscription.findOneAndUpdate(
                         { subscriptionId: subId },
-                        { status: "expired" }
+                        { status: "past_due" }
                     );
                 }
                 break;

@@ -35,4 +35,9 @@ router.post("/upgrade",
     SubscriptionController.upgradeSubscription
 );
 
+router.post("/billing-portal",
+    auth(USER_ROLES.PROPERTY_MANAGER, USER_ROLES.SERVICE_PROVIDER),
+    SubscriptionController.generateBillingPortal
+);
+
 export const SubscriptionRoutes = router;

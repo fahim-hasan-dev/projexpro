@@ -63,10 +63,22 @@ const upgradeSubscription = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const generateBillingPortal = catchAsync(async (req: Request, res: Response) => {
+    const result = await SubscriptionService.createCustomerPortalSession(req.user as JwtPayload);
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: "Billing portal URL generated successfully",
+        data: result,
+    });
+});
+
 export const SubscriptionController = {
     subscriptions,
     subscriptionDetails,
     cancelSubscription,
     toggleAutoRenew,
     upgradeSubscription,
+    generateBillingPortal,
 }

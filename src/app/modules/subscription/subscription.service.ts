@@ -4,9 +4,11 @@ import ApiError from "../../../errors/ApiError";
 import { ISubscription } from "./subscription.interface";
 import { Subscription } from "./subscription.model";
 import stripe from "../../../config/stripe";
+import Stripe from "stripe";
 import { User } from "../user/user.model";
 import { Plan } from "../plan/plan.model";
 import QueryBuilder from "../../builder/QueryBuilder";
+import config from "../../../config";
 
 const subscriptionDetailsFromDB = async (userPayload: JwtPayload): Promise<ISubscription | Record<string, unknown>> => {
     const userId = userPayload.authId || userPayload.id;
@@ -26,12 +28,41 @@ const subscriptionDetailsFromDB = async (userPayload: JwtPayload): Promise<ISubs
         return latestSub;
     }
 
+    let paymentMethod = null;
     if (subscription.subscriptionId) {
         try {
-            const subscriptionFromStripe = await stripe.subscriptions.retrieve(subscription.subscriptionId);
+            const subscriptionFromStripe = await stripe.subscriptions.retrieve(subscription.subscriptionId, { 
+                expand: ['default_payment_method'] 
+            });
+
+            // Extract payment method details from subscription
+            if (subscriptionFromStripe.default_payment_method && typeof subscriptionFromStripe.default_payment_method !== 'string') {
+                const pm = subscriptionFromStripe.default_payment_method as Stripe.PaymentMethod;
+                paymentMethod = {
+                    brand: pm.card?.brand,
+                    last4: pm.card?.last4,
+                    expMonth: pm.card?.exp_month,
+                    expYear: pm.card?.exp_year,
+                };
+            } else if (subscriptionFromStripe.customer) {
+                // If not set on subscription, check customer default
+                const customer = await stripe.customers.retrieve(subscriptionFromStripe.customer as string, { 
+                    expand: ['invoice_settings.default_payment_method'] 
+                }) as Stripe.Customer;
+                
+                if (customer.invoice_settings?.default_payment_method && typeof customer.invoice_settings.default_payment_method !== 'string') {
+                    const pm = customer.invoice_settings.default_payment_method as Stripe.PaymentMethod;
+                    paymentMethod = {
+                        brand: pm.card?.brand,
+                        last4: pm.card?.last4,
+                        expMonth: pm.card?.exp_month,
+                        expYear: pm.card?.exp_year,
+                    };
+                }
+            }
 
             // Check subscription status and update database accordingly
-            if (subscriptionFromStripe?.status !== "active") {
+            if (subscriptionFromStripe?.status !== "active" && subscriptionFromStripe?.status !== "past_due" && subscriptionFromStripe?.status !== "trialing") {
                 await Promise.all([
                     User.findByIdAndUpdate(userId, { subscribe: false, 'subscription.status': 'expired' }, { new: true }),
                     Subscription.findByIdAndUpdate(subscription._id, { status: "expired" }, { new: true })
@@ -43,7 +74,7 @@ const subscriptionDetailsFromDB = async (userPayload: JwtPayload): Promise<ISubs
         }
     }
 
-    return subscription;
+    return { ...subscription, paymentMethod };
 };
 
 const subscriptionsFromDB = async (query: Record<string, unknown>) => {
@@ -263,10 +294,37 @@ const upgradeSubscription = async (userPayload: JwtPayload, newPlanId: string) =
     };
 };
 
+// Create Stripe Customer Portal Session
+const createCustomerPortalSession = async (userPayload: JwtPayload) => {
+    const userId = userPayload.authId || userPayload.id;
+
+    const user = await User.findById(userId);
+    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+
+    const activeSub = await Subscription.findOne({ user: userId })
+        .sort({ createdAt: -1 });
+
+    const subscriptionId = activeSub?.subscriptionId || user?.subscription?.subscriptionId;
+    if (!subscriptionId) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "No active subscription found for this user.");
+    }
+
+    const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+    const stripeCustomerId = stripeSub.customer as string;
+
+    const session = await stripe.billingPortal.sessions.create({
+        customer: stripeCustomerId,
+        return_url: config.stripe.frontendUrl || config.frontend_url || "http://localhost:3000",
+    });
+
+    return { url: session.url };
+};
+
 export const SubscriptionService = {
     subscriptionDetailsFromDB,
     subscriptionsFromDB,
     cancelSubscription,
     toggleAutoRenew,
     upgradeSubscription,
+    createCustomerPortalSession,
 };
