@@ -107,6 +107,7 @@ export const sanitizeUserProfile = (user: any) => {
 const getAllUser = async (query: Record<string, unknown>) => {
     const userQueryBuilder = new QueryBuilder(User.find().select('-password -authentication'), query)
         .filter()
+        .search(["firstName", "lastName","userName","email"])
         .sort()
         .fields()
         .paginate()

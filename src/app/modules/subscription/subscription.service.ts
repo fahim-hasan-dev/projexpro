@@ -204,14 +204,19 @@ const upgradeSubscription = async (userPayload: JwtPayload, newPlanId: string) =
         throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, "Subscription item not found in Stripe");
     }
 
+    const initialQuantity = user.profile?.activeUnits && user.profile.activeUnits > 0 
+        ? user.profile.activeUnits 
+        : (user.profile?.portfolioSize || 1);
+
     const updatedStripeSub = (await stripe.subscriptions.update(subscriptionId, {
         items: [
             {
                 id: subscriptionItemId,
                 price: newPlan.priceId,
+                quantity: initialQuantity,
             },
         ],
-        proration_behavior: "always_invoice",
+        proration_behavior: "none", // Prevent mid-month invoices
         cancel_at_period_end: false,
     })) as any;
 

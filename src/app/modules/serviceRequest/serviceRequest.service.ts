@@ -52,11 +52,14 @@ const createServiceRequest = async (userId: string, payload: IServiceRequest) =>
 const getAllServiceRequests = async (query: Record<string, unknown>, userId: string, role: string) => {
   const searchFields = ["requestNo", "issueTitle", "description", "tenantName", "tenantPhone", "locationDetails"];
   let baseQuery: Record<string, unknown> = { isDeleted: false };
+  const safeQuery = { ...query };
 
   if (role === USER_ROLES.PROPERTY_MANAGER) {
     baseQuery.user = userId;
+    delete safeQuery.user;
   } else if (role === USER_ROLES.SERVICE_PROVIDER) {
     baseQuery.assignedProvider = userId;
+    delete safeQuery.assignedProvider;
   }
 
   const requestQueryBuilder = new QueryBuilder(
@@ -71,7 +74,7 @@ const getAllServiceRequests = async (query: Record<string, unknown>, userId: str
       })
       .populate("user", "firstName lastName userName email phone contactNumber image role")
       .populate("assignedProvider", "firstName lastName userName email phone contactNumber image role profile"),
-    query
+    safeQuery
   )
     .search(searchFields)
     .filter()
@@ -109,10 +112,13 @@ const getSingleServiceRequest = async (id: string, userId: string, role: string)
   }
 
   // Access control
-  if (role === USER_ROLES.PROPERTY_MANAGER && request.user._id.toString() !== userId) {
+  const requestOwnerId = request.user && (request.user as any)._id ? (request.user as any)._id.toString() : request.user?.toString();
+  if (role === USER_ROLES.PROPERTY_MANAGER && requestOwnerId !== userId) {
     throw new ApiError(StatusCodes.FORBIDDEN, "Access denied. You do not own this service request.");
   }
-  if (role === USER_ROLES.SERVICE_PROVIDER && request.assignedProvider?._id.toString() !== userId) {
+
+  const providerId = request.assignedProvider && (request.assignedProvider as any)._id ? (request.assignedProvider as any)._id.toString() : request.assignedProvider?.toString();
+  if (role === USER_ROLES.SERVICE_PROVIDER && providerId !== userId) {
     throw new ApiError(StatusCodes.FORBIDDEN, "Access denied. You are not assigned to this service request.");
   }
 
@@ -121,7 +127,7 @@ const getSingleServiceRequest = async (id: string, userId: string, role: string)
 
 // Assign contractor / service provider & set payout charge (Admin only)
 const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>) => {
-  const existingRequest = await ServiceRequestModel.findOne({ _id: id, isDeleted: false });
+  const existingRequest = await ServiceRequestModel.findOne({ _id: id, isDeleted: false }).lean();
   if (!existingRequest) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Service request not found");
   }
@@ -130,7 +136,7 @@ const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>)
 
   // Validate provider if assigned
   if (payload.assignedProvider) {
-    const provider = await User.findById(payload.assignedProvider);
+    const provider = await User.findById(payload.assignedProvider).lean();
     if (!provider || provider.role !== USER_ROLES.SERVICE_PROVIDER) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Assigned user is not a valid Service Provider");
     }
@@ -138,8 +144,8 @@ const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>)
 
   // Merge specializedRate if provided
   const specializedRate = {
-    ...existingRequest.specializedRate,
-    ...payload.specializedRate,
+    ...(existingRequest.specializedRate || {}),
+    ...(payload.specializedRate || {}),
   };
 
   const basePayment = payload.basePayment !== undefined ? payload.basePayment : existingRequest.basePayment || 0;

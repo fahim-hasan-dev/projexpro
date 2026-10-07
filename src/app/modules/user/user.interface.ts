@@ -47,11 +47,12 @@ export type IPropertyManagerProfile = {
     city?: string;
     state?: string;
     taxId?: string;
-    portfolioSize?: '1-10 Units' | '11-50 Units' | '51-200 Units' | '201-500 Units' | '501+ Units' | string;
+    portfolioSize?: number;
     maintenanceInfrastructure?: string;
     propertyTypes?: string[];
     approvalStatus?: APPROVAL_STATUS;
     rejectionReason?: string;
+    activeUnits?: number;
 };
 
 export type IUserProfile = IPropertyManagerProfile & IServiceProviderProfile;

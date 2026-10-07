@@ -14,7 +14,8 @@ export const propertyManagerProfileSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   taxId: z.string().optional(),
-  portfolioSize: z.string().optional(),
+  portfolioSize: z.number().optional(),
+  activeUnits: z.number().optional(),
   maintenanceInfrastructure: z.string().optional(),
   propertyTypes: z.array(z.string()).optional(),
 });

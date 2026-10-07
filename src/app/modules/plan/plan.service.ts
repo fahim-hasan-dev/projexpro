@@ -12,12 +12,14 @@ import config from '../../../config'
 
 // Create plan in DB
 const createPlanToDB = async (payload: IPlan): Promise<IPlan | null> => {
-  // Create Strike Product and Price
-  const stripeData = await createStripeProductCatalog(payload);
+  if (payload.planType !== 'enterprise') {
+    // Create Stripe Product and Price
+    const stripeData = await createStripeProductCatalog(payload);
 
-  if (stripeData) {
-    payload.productId = stripeData.productId;
-    payload.priceId = stripeData.priceId;
+    if (stripeData) {
+      payload.productId = stripeData.productId;
+      payload.priceId = stripeData.priceId;
+    }
   }
 
   const result = await Plan.create(payload)

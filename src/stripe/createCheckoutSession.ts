@@ -17,16 +17,25 @@ export const createCheckoutSession = async (userdata: JwtPayload, planId: string
         throw new ApiError(StatusCodes.NOT_FOUND, "Plan not found!");
     }
 
+    if (plan.planType === 'enterprise') {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Enterprise plan requires a custom approval request, not a checkout session.");
+    }
+
     if (!plan.priceId) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Selected plan is missing a Stripe priceId");
     }
+
+    // Determine initial quantity: use profile activeUnits if > 0, else fallback to profile portfolioSize or 1
+    const initialQuantity = user.profile?.activeUnits && user.profile.activeUnits > 0
+        ? user.profile.activeUnits
+        : (user.profile?.portfolioSize || 1);
 
     const session = await stripe.checkout.sessions.create({
         mode: "subscription",
         line_items: [
             {
                 price: plan.priceId,
-                quantity: 1,
+                quantity: initialQuantity,
             },
         ],
         customer_email: user.email,

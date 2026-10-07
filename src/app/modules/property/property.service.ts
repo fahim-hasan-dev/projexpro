@@ -7,6 +7,7 @@ import { PropertyModel } from "./property.model";
 import { CategoryModel } from "../category/category.model";
 import { User } from "../user/user.model";
 import { IPlan } from "../plan/plan.interface";
+import { syncStripeSubscriptionQuantity } from "../subscription/subscription.utils";
 
 // Helper to calculate total active units for a property manager
 const getManagerTotalUnits = async (userId: string): Promise<number> => {
@@ -39,7 +40,11 @@ const getManagerTotalUnits = async (userId: string): Promise<number> => {
 // Helper to update totalUnitsUsed on user document
 const syncUserTotalUnits = async (userId: string): Promise<number> => {
   const totalUnits = await getManagerTotalUnits(userId);
-  await User.findByIdAndUpdate(userId, { totalUnitsUsed: totalUnits });
+  await User.findByIdAndUpdate(userId, { 
+    totalUnitsUsed: totalUnits,
+    "profile.activeUnits": totalUnits
+  });
+  await syncStripeSubscriptionQuantity(userId, totalUnits);
   return totalUnits;
 };
 

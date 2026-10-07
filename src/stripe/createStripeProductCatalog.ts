@@ -35,13 +35,40 @@ export const createStripeProductCatalog = async (
             break;
     }
 
-    // Create Price for the Product
-    const price = await stripe.prices.create({
+    // Build basic price data
+    const priceData: any = {
         product: product.id,
-        unit_amount: Math.round(Number(payload.price) * 100),
         currency: "gbp",
         recurring: { interval, interval_count: intervalCount },
-    });
+    };
+
+    if (payload.unitPrice && payload.minimumPrice) {
+        // Implement Stripe Tiered Pricing (Volume)
+        const unitPriceCents = Math.round(Number(payload.unitPrice) * 100);
+        const minAmountCents = Math.round(Number(payload.minimumPrice) * 100);
+        
+        // Calculate the maximum quantity that falls under the minimum flat fee
+        const tier1UpTo = Math.floor(minAmountCents / unitPriceCents);
+
+        priceData.billing_scheme = "tiered";
+        priceData.tiers_mode = "volume";
+        priceData.tiers = [
+            {
+                up_to: tier1UpTo,
+                flat_amount: minAmountCents,
+            },
+            {
+                up_to: "inf",
+                unit_amount: unitPriceCents,
+            },
+        ];
+    } else {
+        // Fallback for standard fixed pricing
+        priceData.unit_amount = Math.round(Number(payload.price || 0) * 100);
+    }
+
+    // Create Price for the Product
+    const price = await stripe.prices.create(priceData);
 
     if (!price) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create Stripe price");

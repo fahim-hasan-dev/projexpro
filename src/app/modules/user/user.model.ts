@@ -162,7 +162,8 @@ const UserSchema = new Schema(
                 city: { type: String, trim: true },
                 state: { type: String, trim: true },
                 taxId: { type: String, trim: true },
-                portfolioSize: { type: String, trim: true },
+                portfolioSize: { type: Number, default: 0 },
+                activeUnits: { type: Number, default: 0 },
                 maintenanceInfrastructure: { type: String, trim: true },
                 propertyTypes: [{ type: String, trim: true }],
 
@@ -250,21 +251,7 @@ const UserSchema = new Schema(
         },
     },
     {
-        timestamps: true,
-        toJSON: {
-            transform: function (doc, ret) {
-                delete ret.password;
-                delete ret.authentication;
-                return ret;
-            },
-        },
-        toObject: {
-            transform: function (doc, ret) {
-                delete ret.password;
-                delete ret.authentication;
-                return ret;
-            },
-        },
+        timestamps: true
     }
 );
 

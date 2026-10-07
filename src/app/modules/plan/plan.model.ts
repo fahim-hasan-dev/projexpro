@@ -11,9 +11,24 @@ const planSchema = new Schema<IPlan, PlanModel>(
             type: String,
             required: true
         },
+        planType: {
+            type: String,
+            enum: ['prime', 'pro', 'enterprise'],
+            default: 'prime',
+            required: true
+        },
         price: {
             type: Number,
-            required: true
+            required: false,
+            default: 0
+        },
+        unitPrice: {
+            type: Number,
+            required: false
+        },
+        minimumPrice: {
+            type: Number,
+            required: false
         },
         duration: {
             type: String,
@@ -31,11 +46,11 @@ const planSchema = new Schema<IPlan, PlanModel>(
         },
         productId: {
             type: String,
-            required: true
+            required: false
         },
         priceId: {
             type: String,
-            required: true
+            required: false
         },
         status: {
             type: String,

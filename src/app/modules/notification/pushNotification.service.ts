@@ -1,4 +1,5 @@
-import * as admin from 'firebase-admin';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getMessaging, Message } from 'firebase-admin/messaging';
 import path from 'path';
 import config from '../../../config';
 import { logger } from '../../../shared/logger';
@@ -8,13 +9,13 @@ let isFirebaseInitialized = false;
 
 const initializeFirebase = () => {
     try {
-        if (admin.apps.length === 0) {
+        if (getApps().length === 0) {
             if (config.firebase_service_account_base64) {
                 const decodedServiceAccount = JSON.parse(
                     Buffer.from(config.firebase_service_account_base64, 'base64').toString('utf-8')
                 );
-                admin.initializeApp({
-                    credential: admin.credential.cert(decodedServiceAccount),
+                initializeApp({
+                    credential: cert(decodedServiceAccount),
                 });
                 logger.info('Firebase Admin initialized successfully using Base64 credentials.');
             } else {
@@ -25,8 +26,8 @@ const initializeFirebase = () => {
                     serviceAccountPath = path.join(process.cwd(), '..', 'serviceAccountKey.json');
                 }
 
-                admin.initializeApp({
-                    credential: admin.credential.cert(serviceAccountPath),
+                initializeApp({
+                    credential: cert(serviceAccountPath),
                 });
                 logger.info('Firebase Admin initialized successfully using: ' + serviceAccountPath);
             }
@@ -61,7 +62,7 @@ const sendPushNotification = async (
         });
     }
 
-    const message: admin.messaging.Message = {
+    const message: Message = {
         notification: {
             title,
             body,
@@ -71,7 +72,7 @@ const sendPushNotification = async (
     };
 
     try {
-        const response = await admin.messaging().send(message);
+        const response = await getMessaging().send(message);
         logger.info('Push notification sent successfully:', response);
         return response;
     } catch (error) {

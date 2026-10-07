@@ -3,7 +3,10 @@ import { Model } from "mongoose";
 export type IPlan = {
     title: string;
     description: string;
-    price: number;
+    planType: 'prime' | 'pro' | 'enterprise';
+    price?: number;
+    unitPrice?: number;
+    minimumPrice?: number;
     duration: '1 month' | '3 months' | '6 months' | '1 year'; 
     paymentType: 'Monthly' | 'Yearly';
     maxUnits?: number;
