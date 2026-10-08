@@ -457,7 +457,7 @@ const subscriptionActivatedEmail = (data: any) => {
                 </tr>
                 <tr>
                   <td style="padding:14px 18px; font-size:14px; color:#64748B; font-weight:600; border-bottom:1px solid #E9D5FF;">Amount Paid</td>
-                  <td style="padding:14px 18px; font-size:14px; color:#5B1B95; font-weight:700; text-align:right; border-bottom:1px solid #E9D5FF;">£${data.amountPaid}</td>
+                  <td style="padding:14px 18px; font-size:14px; color:#5B1B95; font-weight:700; text-align:right; border-bottom:1px solid #E9D5FF;">$${data.amountPaid}</td>
                 </tr>
                 <tr>
                   <td style="padding:14px 18px; font-size:14px; color:#64748B; font-weight:600;">Transaction ID</td>

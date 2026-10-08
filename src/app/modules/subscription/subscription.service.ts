@@ -9,6 +9,7 @@ import { User } from "../user/user.model";
 import { Plan } from "../plan/plan.model";
 import QueryBuilder from "../../builder/QueryBuilder";
 import config from "../../../config";
+import { EnterpriseRequest } from "./enterpriseRequest.model";
 
 const subscriptionDetailsFromDB = async (userPayload: JwtPayload): Promise<ISubscription | Record<string, unknown>> => {
     const userId = userPayload.authId || userPayload.id;
@@ -29,7 +30,7 @@ const subscriptionDetailsFromDB = async (userPayload: JwtPayload): Promise<ISubs
     }
 
     let paymentMethod = null;
-    if (subscription.subscriptionId) {
+    if (subscription.subscriptionId && !subscription.isEnterprise) {
         try {
             const subscriptionFromStripe = await stripe.subscriptions.retrieve(subscription.subscriptionId, { 
                 expand: ['default_payment_method'] 
@@ -320,6 +321,127 @@ const createCustomerPortalSession = async (userPayload: JwtPayload) => {
     return { url: session.url };
 };
 
+// Enterprise Request Workflow
+const createEnterpriseRequest = async (userPayload: JwtPayload, planId: string) => {
+    const userId = userPayload.authId || userPayload.id;
+
+    const user = await User.findById(userId);
+    if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+
+    const plan = await Plan.findById(planId);
+    if (!plan) throw new ApiError(StatusCodes.NOT_FOUND, "Plan not found");
+    if (plan.planType !== "enterprise") {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Selected plan is not an enterprise plan.");
+    }
+
+    const existingRequest = await EnterpriseRequest.findOne({ user: userId, status: "pending" });
+    if (existingRequest) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "You already have a pending enterprise request.");
+    }
+
+    const request = await EnterpriseRequest.create({
+        user: userId,
+        plan: planId,
+        status: "pending",
+    });
+
+    return {
+        message: "Enterprise plan request submitted successfully. Admin will review and approve.",
+        request,
+    };
+};
+
+const getEnterpriseRequests = async (query: Record<string, unknown>) => {
+    const result = new QueryBuilder(EnterpriseRequest.find(), query).paginate();
+    const requests = await result.modelQuery
+        .populate("user", "firstName lastName userName email phone image")
+        .populate("plan", "title price duration paymentType")
+        .sort({ createdAt: -1 })
+        .lean();
+    const pagination = await result.getPaginationInfo();
+
+    return { requests, pagination };
+};
+
+const approveEnterpriseRequest = async (requestId: string, payload: {
+    planName: string;
+    effectiveDate: Date;
+    billingDate: Date;
+    numberOfUnits: number;
+    perUnitFee: number;
+}) => {
+    const request = await EnterpriseRequest.findById(requestId).populate("plan");
+    if (!request) throw new ApiError(StatusCodes.NOT_FOUND, "Enterprise request not found");
+    if (request.status !== "pending") throw new ApiError(StatusCodes.BAD_REQUEST, "Request is already processed");
+
+    const { planName, effectiveDate, billingDate, numberOfUnits, perUnitFee } = payload;
+    const totalMonthlySubscription = numberOfUnits * perUnitFee;
+
+    // Update Request
+    await EnterpriseRequest.findByIdAndUpdate(requestId, {
+        status: "approved",
+        planName,
+        effectiveDate,
+        billingDate,
+        numberOfUnits,
+        perUnitFee,
+        totalMonthlySubscription,
+    });
+
+    const currentPeriodStart = new Date(effectiveDate);
+    const currentPeriodEnd = new Date(billingDate);
+    
+    // Create Subscription
+    const subscription = await Subscription.create({
+        user: request.user,
+        customerId: "OFFLINE_ENTERPRISE", // Offline identifier
+        subscriptionId: `sub_ent_${Date.now()}`, // Custom offline ID
+        price: totalMonthlySubscription,
+        plan: request.plan._id,
+        status: "active",
+        currentPeriodStart,
+        currentPeriodEnd,
+        isEnterprise: true,
+        enterpriseData: {
+            planName,
+            effectiveDate,
+            billingDate,
+            numberOfUnits,
+            perUnitFee,
+            totalMonthlySubscription,
+        }
+    });
+
+    // Update User
+    await User.findByIdAndUpdate(request.user, {
+        subscribe: true,
+        subscription: {
+            plan: request.plan._id,
+            subscriptionId: subscription.subscriptionId,
+            status: "active",
+            currentPeriodStart,
+            currentPeriodEnd,
+        }
+    });
+
+    return {
+        message: "Enterprise request approved and subscription activated successfully.",
+        subscription,
+    };
+};
+
+const rejectEnterpriseRequest = async (requestId: string) => {
+    const request = await EnterpriseRequest.findById(requestId);
+    if (!request) throw new ApiError(StatusCodes.NOT_FOUND, "Enterprise request not found");
+    if (request.status !== "pending") throw new ApiError(StatusCodes.BAD_REQUEST, "Request is already processed");
+
+    await EnterpriseRequest.findByIdAndUpdate(requestId, { status: "rejected" });
+
+    return {
+        message: "Enterprise request has been rejected.",
+    };
+};
+
 export const SubscriptionService = {
     subscriptionDetailsFromDB,
     subscriptionsFromDB,
@@ -327,4 +449,8 @@ export const SubscriptionService = {
     toggleAutoRenew,
     upgradeSubscription,
     createCustomerPortalSession,
+    createEnterpriseRequest,
+    getEnterpriseRequests,
+    approveEnterpriseRequest,
+    rejectEnterpriseRequest
 };

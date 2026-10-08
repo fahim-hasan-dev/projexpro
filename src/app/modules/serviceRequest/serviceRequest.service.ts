@@ -194,7 +194,7 @@ const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>)
       await NotificationService.insertNotification({
         receiver: new Types.ObjectId(newProviderId),
         title: "Service Request Assigned",
-        message: `You have been assigned to service request ${result.requestNo} ("${result.issueTitle}"). Total Payout: £${result.finalPayout || result.basePayment || 0}.`,
+        message: `You have been assigned to service request ${result.requestNo} ("${result.issueTitle}"). Total Payout: $${result.finalPayout || result.basePayment || 0}.`,
         referenceId: result._id,
         screen: "SERVICE_REQUEST",
         type: "USER",
@@ -219,7 +219,7 @@ const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>)
       await NotificationService.insertNotification({
         receiver: new Types.ObjectId(managerId),
         title: "Service Request Assigned & Price Set",
-        message: `Your service request ${result.requestNo} has been assigned to a service provider. Total charge: £${result.finalPayout || result.basePayment || 0}.`,
+        message: `Your service request ${result.requestNo} has been assigned to a service provider. Total charge: $${result.finalPayout || result.basePayment || 0}.`,
         referenceId: result._id,
         screen: "SERVICE_REQUEST",
         type: "USER",

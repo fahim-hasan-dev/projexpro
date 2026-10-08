@@ -47,8 +47,18 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
             default: "active",
             required: true
         },
-        
-
+        isEnterprise: {
+            type: Boolean,
+            default: false
+        },
+        enterpriseData: {
+            planName: String,
+            effectiveDate: Date,
+            billingDate: Date,
+            numberOfUnits: Number,
+            perUnitFee: Number,
+            totalMonthlySubscription: Number,
+        }
     },
     {
         timestamps: true

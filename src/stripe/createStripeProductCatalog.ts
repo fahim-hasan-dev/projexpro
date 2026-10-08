@@ -38,7 +38,7 @@ export const createStripeProductCatalog = async (
     // Build basic price data
     const priceData: any = {
         product: product.id,
-        currency: "gbp",
+        currency: "usd",
         recurring: { interval, interval_count: intervalCount },
     };
 

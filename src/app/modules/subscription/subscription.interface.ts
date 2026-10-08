@@ -12,6 +12,15 @@ export type ISubscription = {
     currentPeriodStart: Date;
     currentPeriodEnd: Date;
     invoice?: string;
+    isEnterprise?: boolean;
+    enterpriseData?: {
+        planName?: string;
+        effectiveDate?: Date;
+        billingDate?: Date;
+        numberOfUnits?: number;
+        perUnitFee?: number;
+        totalMonthlySubscription?: number;
+    };
 };
 
 

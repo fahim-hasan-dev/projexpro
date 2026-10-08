@@ -96,7 +96,7 @@ const createInvoiceFromServiceRequest = async (serviceRequestId: string | Types.
     await NotificationService.insertNotification({
       receiver: new Types.ObjectId(managerId),
       title: "Invoice Generated",
-      message: `Invoice ${newInvoice.invoiceNo} has been generated for Service Request ${serviceRequest.requestNo}. Balance due: £${totalAmount}.`,
+      message: `Invoice ${newInvoice.invoiceNo} has been generated for Service Request ${serviceRequest.requestNo}. Balance due: $${totalAmount}.`,
       referenceId: newInvoice._id,
       screen: "INVOICE",
       type: "USER",
@@ -132,7 +132,7 @@ const createCheckoutSessionForInvoice = async (invoiceId: string, userId: string
     line_items: [
       {
         price_data: {
-          currency: "gbp",
+          currency: "usd",
           product_data: {
             name: `Invoice ${invoice.invoiceNo}`,
             description: `Payment for Service Request ${invoice.jobId || (invoice.serviceRequest as any)?.requestNo || ''}`,

@@ -74,6 +74,53 @@ const generateBillingPortal = catchAsync(async (req: Request, res: Response) => 
     });
 });
 
+const createEnterpriseRequest = catchAsync(async (req: Request, res: Response) => {
+    const { planId } = req.body;
+    const result = await SubscriptionService.createEnterpriseRequest(req.user as JwtPayload, planId);
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: result.message,
+        data: result.request,
+    });
+});
+
+const getEnterpriseRequests = catchAsync(async (req: Request, res: Response) => {
+    const result = await SubscriptionService.getEnterpriseRequests(req.query);
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: "Enterprise requests retrieved successfully",
+        data: result,
+    });
+});
+
+const approveEnterpriseRequest = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await SubscriptionService.approveEnterpriseRequest(id as string, req.body);
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: result.message,
+        data: result.subscription,
+    });
+});
+
+const rejectEnterpriseRequest = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await SubscriptionService.rejectEnterpriseRequest(id as string);
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: result.message,
+        data: null,
+    });
+});
+
 export const SubscriptionController = {
     subscriptions,
     subscriptionDetails,
@@ -81,4 +128,8 @@ export const SubscriptionController = {
     toggleAutoRenew,
     upgradeSubscription,
     generateBillingPortal,
+    createEnterpriseRequest,
+    getEnterpriseRequests,
+    approveEnterpriseRequest,
+    rejectEnterpriseRequest,
 }

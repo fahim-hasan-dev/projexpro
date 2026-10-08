@@ -68,7 +68,7 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                                 await NotificationService.insertNotification({
                                     receiver: invoice.propertyManager,
                                     title: "Invoice Paid",
-                                    message: `Payment of £${paidAmt} for invoice ${invoice.invoiceNo} has been completed successfully.`,
+                                    message: `Payment of $${paidAmt} for invoice ${invoice.invoiceNo} has been completed successfully.`,
                                     referenceId: invoice._id,
                                     screen: "INVOICE",
                                     type: "USER",

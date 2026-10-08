@@ -6,7 +6,7 @@ export const createPaymentSession = async (user: JwtPayload, amount: number, ref
     const session = await stripe.checkout.sessions.create({
         line_items: [{
             price_data: {
-                currency: 'gbp',
+                currency: 'usd',
                 product_data: {
                     name: 'Payment',
                     description: `Payment for reference: ${referenceId}`,

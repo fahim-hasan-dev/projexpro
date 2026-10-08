@@ -40,4 +40,25 @@ router.post("/billing-portal",
     SubscriptionController.generateBillingPortal
 );
 
+// Enterprise Routes
+router.post("/enterprise/request",
+    auth(USER_ROLES.PROPERTY_MANAGER, USER_ROLES.SERVICE_PROVIDER),
+    SubscriptionController.createEnterpriseRequest
+);
+
+router.get("/enterprise/requests",
+    auth(ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN),
+    SubscriptionController.getEnterpriseRequests
+);
+
+router.post("/enterprise/approve/:id",
+    auth(ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN),
+    SubscriptionController.approveEnterpriseRequest
+);
+
+router.post("/enterprise/reject/:id",
+    auth(ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN),
+    SubscriptionController.rejectEnterpriseRequest
+);
+
 export const SubscriptionRoutes = router;
