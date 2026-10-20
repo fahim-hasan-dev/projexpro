@@ -45,7 +45,7 @@ const getAllServiceRequests = catchAsync(async (req: Request, res: Response) => 
 
 // Get Single Service Request
 const getSingleServiceRequest = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userId = req.user.authId || req.user.id;
   const role = req.user.role;
 
@@ -61,7 +61,7 @@ const getSingleServiceRequest = catchAsync(async (req: Request, res: Response) =
 
 // Assign Contractor & Set Payout (Admin only)
 const assignAndSetPayout = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const payload = req.body;
 
   const result = await ServiceRequestServices.assignAndSetPayout(id, payload);
@@ -74,26 +74,40 @@ const assignAndSetPayout = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// Update Request Status
+// Single Unified Update Status API (Provider / Manager / Admin)
 const updateStatus = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { status } = req.body;
+  const id = req.params.id as string;
+  const { status, reason, note } = req.body;
   const userId = req.user.authId || req.user.id;
   const role = req.user.role;
 
-  const result = await ServiceRequestServices.updateStatus(id, userId, role, status);
+  // Normalize images if submitted via multipart or json
+  let images: string[] = [];
+  if (req.body.images && Array.isArray(req.body.images)) {
+    images = req.body.images;
+  } else if (req.body.image) {
+    images = [req.body.image];
+  } else if (req.body.media) {
+    images = Array.isArray(req.body.media) ? req.body.media : [req.body.media];
+  }
+
+  const result = await ServiceRequestServices.updateStatus(id, userId, role, status, {
+    reason,
+    note: note || req.body.completionNote || req.body.approvalNote,
+    images,
+  });
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: "Service request status updated successfully",
+    message: `Service request status updated to ${status} successfully`,
     data: result,
   });
 });
 
 // Delete Service Request
 const deleteServiceRequest = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userId = req.user.authId || req.user.id;
   const role = req.user.role;
 
@@ -115,3 +129,5 @@ export const ServiceRequestControllers = {
   updateStatus,
   deleteServiceRequest,
 };
+
+

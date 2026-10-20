@@ -161,15 +161,16 @@ const UserSchema = new Schema(
                 businessAddress: { type: String, trim: true },
                 city: { type: String, trim: true },
                 state: { type: String, trim: true },
+                zipCode: { type: String, trim: true },
+                country: { type: String, trim: true },
                 taxId: { type: String, trim: true },
-                portfolioSize: { type: Number, default: 0 },
+                portfolioSize: { type: Schema.Types.Mixed, default: 0 },
                 activeUnits: { type: Number, default: 0 },
                 maintenanceInfrastructure: { type: String, trim: true },
                 propertyTypes: [{ type: String, trim: true }],
 
                 // Service Provider Profile Fields
                 streetAddress: { type: String, trim: true },
-                zipCode: { type: String, trim: true },
                 bio: { type: String, trim: true },
                 skills: [{ type: String, trim: true }],
                 officeAddress: { type: String, trim: true },

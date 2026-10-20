@@ -113,6 +113,29 @@ const serviceRequestSchema = new Schema<IServiceRequest, ServiceRequestModelType
       type: Number,
       default: 0,
     },
+    rejectionReason: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    completionImages: {
+      type: [String],
+      default: [],
+    },
+    note: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    invoice: {
+      type: Schema.Types.ObjectId,
+      ref: "Invoice",
+      default: null,
+    },
+    isPaid: {
+      type: Boolean,
+      default: false,
+    },
     isDeleted: {
       type: Boolean,
       default: false,

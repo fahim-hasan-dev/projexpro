@@ -20,7 +20,7 @@ const createInvoice = catchAsync(async (req: Request, res: Response) => {
 
 // Pay Invoice via Stripe (Creates Checkout Session)
 const payInvoice = catchAsync(async (req: Request, res: Response) => {
-  const invoiceId = req.params.id || req.body.invoiceId;
+  const invoiceId = (req.params.id || req.body.invoiceId) as string;
   const userId = req.user.authId || req.user.id;
 
   const result = await InvoiceServices.createCheckoutSessionForInvoice(invoiceId, userId);
@@ -33,9 +33,24 @@ const payInvoice = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Pay Invoice directly by Service Request ID
+const payInvoiceByServiceRequest = catchAsync(async (req: Request, res: Response) => {
+  const serviceRequestId = (req.params.serviceRequestId || req.body.serviceRequestId) as string;
+  const userId = req.user.authId || req.user.id;
+
+  const result = await InvoiceServices.createCheckoutSessionForServiceRequest(serviceRequestId, userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Stripe checkout session created for service request invoice payment",
+    data: result,
+  });
+});
+
 // Get Single Invoice Details
 const getSingleInvoice = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const userId = req.user.authId || req.user.id;
   const role = req.user.role;
 
@@ -51,7 +66,7 @@ const getSingleInvoice = catchAsync(async (req: Request, res: Response) => {
 
 // Get Invoice by Service Request ID
 const getInvoiceByServiceRequest = catchAsync(async (req: Request, res: Response) => {
-  const { serviceRequestId } = req.params;
+  const serviceRequestId = req.params.serviceRequestId as string;
   const userId = req.user.authId || req.user.id;
   const role = req.user.role;
 
@@ -93,6 +108,7 @@ const getAllInvoices = catchAsync(async (req: Request, res: Response) => {
 export const InvoiceControllers = {
   createInvoice,
   payInvoice,
+  payInvoiceByServiceRequest,
   getSingleInvoice,
   getInvoiceByServiceRequest,
   getMyInvoices,

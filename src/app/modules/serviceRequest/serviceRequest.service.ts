@@ -10,15 +10,29 @@ import { USER_ROLES, ADMIN_ROLES } from "../../../enum/user";
 import { NotificationService } from "../notification/notification.service";
 import { InvoiceServices } from "../invoice/invoice.service";
 
-// Create Service Request (Property Manager)
+// Helper to populate service request
+const populateServiceRequestQuery = (query: any) => {
+  return query
+    .populate({
+      path: "property",
+      select: "name title propertyType address totalUnits image category subCategory",
+      populate: [
+        { path: "category", select: "name image" },
+        { path: "subCategory", select: "name image" },
+      ],
+    })
+    .populate("user", "firstName lastName userName email phone contactNumber image role")
+    .populate("assignedProvider", "firstName lastName userName email phone contactNumber image role profile")
+    .populate("invoice", "invoiceNo status totalAmount paidAmount balanceDue stripeCheckoutSessionId dueDate");
+};
+
+// 1. Create Service Request (Property Manager)
 const createServiceRequest = async (userId: string, payload: IServiceRequest) => {
-  // Verify property exists
   const property = await PropertyModel.findOne({ _id: payload.property, isDeleted: false });
   if (!property) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Property not found");
   }
 
-  // Ensure property belongs to the property manager
   if (property.user.toString() !== userId) {
     throw new ApiError(StatusCodes.FORBIDDEN, "You can only create service requests for your own properties");
   }
@@ -28,7 +42,7 @@ const createServiceRequest = async (userId: string, payload: IServiceRequest) =>
 
   const result = await ServiceRequestModel.create(payload);
 
-  // Notify all admins about the new service request
+  // Notify Admins
   try {
     const admins = await User.find({ role: { $in: [ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN] } });
     for (const admin of admins) {
@@ -48,7 +62,7 @@ const createServiceRequest = async (userId: string, payload: IServiceRequest) =>
   return result;
 };
 
-// Get all service requests (Role based access)
+// 2. Get all service requests (Role based access)
 const getAllServiceRequests = async (query: Record<string, unknown>, userId: string, role: string) => {
   const searchFields = ["requestNo", "issueTitle", "description", "tenantName", "tenantPhone", "locationDetails"];
   let baseQuery: Record<string, unknown> = { isDeleted: false };
@@ -63,17 +77,7 @@ const getAllServiceRequests = async (query: Record<string, unknown>, userId: str
   }
 
   const requestQueryBuilder = new QueryBuilder(
-    ServiceRequestModel.find(baseQuery)
-      .populate({
-        path: "property",
-        select: "name title propertyType address totalUnits image category subCategory",
-        populate: [
-          { path: "category", select: "name image" },
-          { path: "subCategory", select: "name image" },
-        ],
-      })
-      .populate("user", "firstName lastName userName email phone contactNumber image role")
-      .populate("assignedProvider", "firstName lastName userName email phone contactNumber image role profile"),
+    populateServiceRequestQuery(ServiceRequestModel.find(baseQuery)),
     safeQuery
   )
     .search(searchFields)
@@ -93,25 +97,16 @@ const getAllServiceRequests = async (query: Record<string, unknown>, userId: str
   };
 };
 
-// Get single service request details
+// 3. Get single service request details
 const getSingleServiceRequest = async (id: string, userId: string, role: string) => {
-  const request = await ServiceRequestModel.findOne({ _id: id, isDeleted: false })
-    .populate({
-      path: "property",
-      select: "name title propertyType address totalUnits image category subCategory",
-      populate: [
-        { path: "category", select: "name image" },
-        { path: "subCategory", select: "name image" },
-      ],
-    })
-    .populate("user", "firstName lastName userName email phone contactNumber image role")
-    .populate("assignedProvider", "firstName lastName userName email phone contactNumber image role profile");
+  const request = await populateServiceRequestQuery(
+    ServiceRequestModel.findOne({ _id: id, isDeleted: false })
+  );
 
   if (!request) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Service request not found");
   }
 
-  // Access control
   const requestOwnerId = request.user && (request.user as any)._id ? (request.user as any)._id.toString() : request.user?.toString();
   if (role === USER_ROLES.PROPERTY_MANAGER && requestOwnerId !== userId) {
     throw new ApiError(StatusCodes.FORBIDDEN, "Access denied. You do not own this service request.");
@@ -125,24 +120,20 @@ const getSingleServiceRequest = async (id: string, userId: string, role: string)
   return request;
 };
 
-// Assign contractor / service provider & set payout charge (Admin only)
+// 4. Assign contractor & set payout (Admin only, handles initial assign and reassigning)
 const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>) => {
   const existingRequest = await ServiceRequestModel.findOne({ _id: id, isDeleted: false }).lean();
   if (!existingRequest) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Service request not found");
   }
 
-  const previousProviderId = existingRequest.assignedProvider ? existingRequest.assignedProvider.toString() : null;
-
-  // Validate provider if assigned
   if (payload.assignedProvider) {
-    const provider = await User.findById(payload.assignedProvider).lean();
-    if (!provider || provider.role !== USER_ROLES.SERVICE_PROVIDER) {
+    const providerUser = await User.findById(payload.assignedProvider).lean();
+    if (!providerUser || providerUser.role !== USER_ROLES.SERVICE_PROVIDER) {
       throw new ApiError(StatusCodes.NOT_FOUND, "Assigned user is not a valid Service Provider");
     }
   }
 
-  // Merge specializedRate if provided
   const specializedRate = {
     ...(existingRequest.specializedRate || {}),
     ...(payload.specializedRate || {}),
@@ -150,7 +141,6 @@ const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>)
 
   const basePayment = payload.basePayment !== undefined ? payload.basePayment : existingRequest.basePayment || 0;
 
-  // Calculate final payout
   let finalPayout = basePayment;
   if (specializedRate && specializedRate.isActive) {
     const val = Number(specializedRate.value || 0);
@@ -166,54 +156,34 @@ const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>)
     specializedRate,
     basePayment,
     finalPayout,
+    rejectionReason: "", // Clear previous rejection reason upon new assignment
   };
 
-  // If assigning provider and status is still Pending, set status to Assigned
-  if (payload.assignedProvider && (!payload.status || payload.status === REQUEST_STATUS.PENDING)) {
+  // If assigning provider, set status to Assigned
+  if (payload.assignedProvider) {
     updateData.status = REQUEST_STATUS.ASSIGNED;
   }
 
-  const result = await ServiceRequestModel.findByIdAndUpdate(id, updateData, { new: true })
-    .populate({
-      path: "property",
-      select: "name title propertyType address totalUnits image category subCategory",
-      populate: [
-        { path: "category", select: "name image" },
-        { path: "subCategory", select: "name image" },
-      ],
-    })
-    .populate("user", "firstName lastName userName email phone contactNumber image role")
-    .populate("assignedProvider", "firstName lastName userName email phone contactNumber image role profile");
+  const result = await populateServiceRequestQuery(
+    ServiceRequestModel.findByIdAndUpdate(id, updateData, { new: true })
+  );
 
   if (!result) return result;
 
   try {
-    // Send notification to newly assigned Service Provider
+    // Notify newly assigned Service Provider
     if (payload.assignedProvider) {
-      const newProviderId = payload.assignedProvider.toString();
       await NotificationService.insertNotification({
-        receiver: new Types.ObjectId(newProviderId),
+        receiver: new Types.ObjectId(payload.assignedProvider.toString()),
         title: "Service Request Assigned",
-        message: `You have been assigned to service request ${result.requestNo} ("${result.issueTitle}"). Total Payout: $${result.finalPayout || result.basePayment || 0}.`,
+        message: `You have been assigned to service request ${result.requestNo} ("${result.issueTitle}"). Total Payout: $${result.finalPayout || result.basePayment || 0}. Please accept or reject.`,
         referenceId: result._id,
         screen: "SERVICE_REQUEST",
         type: "USER",
       });
-
-      // If reassigned from an old provider to a new provider, notify old provider
-      if (previousProviderId && previousProviderId !== newProviderId) {
-        await NotificationService.insertNotification({
-          receiver: new Types.ObjectId(previousProviderId),
-          title: "Service Request Reassigned",
-          message: `Service request ${result.requestNo} has been reassigned to another service provider.`,
-          referenceId: result._id,
-          screen: "SERVICE_REQUEST",
-          type: "USER",
-        });
-      }
     }
 
-    // Send notification to Property Manager (Request Owner)
+    // Notify Property Manager
     if (result.user) {
       const managerId = (result.user as any)._id ? (result.user as any)._id.toString() : result.user.toString();
       await NotificationService.insertNotification({
@@ -232,81 +202,159 @@ const assignAndSetPayout = async (id: string, payload: Partial<IServiceRequest>)
   return result;
 };
 
-// Update request status
-const updateStatus = async (id: string, userId: string, role: string, status: REQUEST_STATUS) => {
+// 5. Single Unified Update Status Function
+const updateStatus = async (
+  id: string,
+  userId: string,
+  role: string,
+  status: REQUEST_STATUS,
+  payload?: { reason?: string; note?: string; images?: string[] }
+) => {
   const request = await ServiceRequestModel.findOne({ _id: id, isDeleted: false });
   if (!request) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Service request not found");
   }
 
-  if (role === USER_ROLES.SERVICE_PROVIDER && request.assignedProvider?.toString() !== userId) {
-    throw new ApiError(StatusCodes.FORBIDDEN, "Access denied. You are not assigned to this job.");
-  }
-  if (role === USER_ROLES.PROPERTY_MANAGER && request.user.toString() !== userId) {
-    throw new ApiError(StatusCodes.FORBIDDEN, "Access denied. You do not own this request.");
+  const managerId = request.user.toString();
+  const providerId = request.assignedProvider ? request.assignedProvider.toString() : null;
+  const isAdmin = role === ADMIN_ROLES.ADMIN || role === ADMIN_ROLES.SUPER_ADMIN;
+
+  const updateData: Partial<IServiceRequest> = { status };
+  if (payload?.note) updateData.note = payload.note;
+  if (payload?.images && payload.images.length > 0) updateData.completionImages = payload.images;
+
+  // Validation based on status transition
+  if (status === REQUEST_STATUS.ACCEPTED) {
+    if (!isAdmin && providerId !== userId) {
+      throw new ApiError(StatusCodes.FORBIDDEN, "Access denied. You are not assigned to this service request.");
+    }
+  } else if (status === REQUEST_STATUS.REJECTED) {
+    if (!isAdmin && providerId !== userId) {
+      throw new ApiError(StatusCodes.FORBIDDEN, "Access denied. You are not assigned to this service request.");
+    }
+    updateData.rejectionReason = payload?.reason || payload?.note || "Declined by service provider";
+  } else if (status === REQUEST_STATUS.IN_PROGRESS) {
+    if (!isAdmin && providerId !== userId && managerId !== userId) {
+      throw new ApiError(StatusCodes.FORBIDDEN, "Access denied.");
+    }
+  } else if (status === REQUEST_STATUS.PENDING_APPROVAL) {
+    if (!isAdmin && providerId !== userId) {
+      throw new ApiError(StatusCodes.FORBIDDEN, "Access denied. You are not assigned to this service request.");
+    }
+  } else if (status === REQUEST_STATUS.COMPLETED) {
+    if (!isAdmin && managerId !== userId) {
+      throw new ApiError(StatusCodes.FORBIDDEN, "Access denied. Only the property manager or admin can confirm completion.");
+    }
+
+    // Auto-generate invoice upon completion
+    try {
+      const invoice = await InvoiceServices.createInvoiceFromServiceRequest(request._id);
+      if (invoice?._id) {
+        updateData.invoice = invoice._id;
+      }
+    } catch (err) {
+      console.error("Failed to auto-generate invoice on completion:", err);
+    }
+  } else if (status === REQUEST_STATUS.CANCELLED) {
+    if (!isAdmin && managerId !== userId) {
+      throw new ApiError(StatusCodes.FORBIDDEN, "Access denied. Only the property manager or admin can cancel.");
+    }
   }
 
-  const result = await ServiceRequestModel.findByIdAndUpdate(id, { status }, { new: true })
-    .populate("property", "name title propertyType address totalUnits image")
-    .populate("user", "firstName lastName userName email phone contactNumber image role")
-    .populate("assignedProvider", "firstName lastName userName email phone contactNumber image role profile");
+  const result = await populateServiceRequestQuery(
+    ServiceRequestModel.findByIdAndUpdate(id, updateData, { new: true })
+  );
 
   if (!result) return result;
 
+  // Send relevant notifications based on the new status
   try {
-    const managerId = (result.user as any)._id ? (result.user as any)._id.toString() : result.user.toString();
+    const admins = await User.find({ role: { $in: [ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN] } });
 
-    if (status === REQUEST_STATUS.IN_PROGRESS) {
-      // Notify Property Manager
+    if (status === REQUEST_STATUS.ACCEPTED) {
+      // Notify PM & Admins
       await NotificationService.insertNotification({
         receiver: new Types.ObjectId(managerId),
-        title: "Service Request In Progress",
-        message: `Work has started on service request ${result.requestNo} ("${result.issueTitle}").`,
+        title: "Service Request Accepted",
+        message: `Service provider accepted your service request ${result.requestNo}.`,
         referenceId: result._id,
         screen: "SERVICE_REQUEST",
         type: "USER",
       });
-
-      // Notify Admins
-      const admins = await User.find({ role: { $in: [ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN] } });
       for (const admin of admins) {
         await NotificationService.insertNotification({
           receiver: admin._id,
-          title: "Service Request In Progress",
-          message: `Service request ${result.requestNo} is now in progress.`,
+          title: "Service Request Accepted",
+          message: `Service provider accepted service request ${result.requestNo}.`,
           referenceId: result._id,
           screen: "SERVICE_REQUEST",
           type: "ADMIN",
         });
       }
-    } else if (status === REQUEST_STATUS.COMPLETED) {
-      // Auto-generate Invoice for completed Service Request
-      try {
-        await InvoiceServices.createInvoiceFromServiceRequest(result._id);
-      } catch (err) {
-        console.error("Failed to auto-generate invoice on completion:", err);
+    } else if (status === REQUEST_STATUS.REJECTED) {
+      // Notify Admins so admin portal shows rejection for reassigning
+      for (const admin of admins) {
+        await NotificationService.insertNotification({
+          receiver: admin._id,
+          title: "Service Request Rejected",
+          message: `Service provider rejected request ${result.requestNo}. Reason: "${updateData.rejectionReason}". Please reassign to another provider.`,
+          referenceId: result._id,
+          screen: "SERVICE_REQUEST",
+          type: "ADMIN",
+        });
       }
-
-      // Notify Property Manager
+    } else if (status === REQUEST_STATUS.IN_PROGRESS) {
+      // If PM requested revision
+      if (role === USER_ROLES.PROPERTY_MANAGER && providerId) {
+        await NotificationService.insertNotification({
+          receiver: new Types.ObjectId(providerId),
+          title: "Revision Requested",
+          message: `Property manager requested revision on request ${result.requestNo}. Note: "${payload?.note || ''}".`,
+          referenceId: result._id,
+          screen: "SERVICE_REQUEST",
+          type: "USER",
+        });
+      } else {
+        // Provider started work
+        await NotificationService.insertNotification({
+          receiver: new Types.ObjectId(managerId),
+          title: "Work Started",
+          message: `Work has started on service request ${result.requestNo} ("${result.issueTitle}").`,
+          referenceId: result._id,
+          screen: "SERVICE_REQUEST",
+          type: "USER",
+        });
+      }
+    } else if (status === REQUEST_STATUS.PENDING_APPROVAL) {
+      // Notify Property Manager to approve
       await NotificationService.insertNotification({
         receiver: new Types.ObjectId(managerId),
-        title: "Service Request Completed",
-        message: `Service request ${result.requestNo} ("${result.issueTitle}") has been completed by the service provider. An invoice has been generated.`,
+        title: "Work Finished - Approval Required",
+        message: `Service provider has completed work on request ${result.requestNo} ("${result.issueTitle}"). Please review and confirm completion.`,
         referenceId: result._id,
         screen: "SERVICE_REQUEST",
         type: "USER",
       });
+    } else if (status === REQUEST_STATUS.COMPLETED) {
+      // Notify Property Manager
+      await NotificationService.insertNotification({
+        receiver: new Types.ObjectId(managerId),
+        title: "Service Completed & Invoice Ready",
+        message: `Service request ${result.requestNo} is completed. Invoice has been generated. Please proceed to payment.`,
+        referenceId: result.invoice?._id || result._id,
+        screen: "INVOICE",
+        type: "USER",
+      });
 
-      // Notify Admins
-      const admins = await User.find({ role: { $in: [ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN] } });
-      for (const admin of admins) {
+      // Notify Provider
+      if (providerId) {
         await NotificationService.insertNotification({
-          receiver: admin._id,
-          title: "Service Request Completed",
-          message: `Service request ${result.requestNo} has been marked as completed and invoice generated.`,
+          receiver: new Types.ObjectId(providerId),
+          title: "Work Approved & Completed",
+          message: `Property manager confirmed completion of service request ${result.requestNo}.`,
           referenceId: result._id,
           screen: "SERVICE_REQUEST",
-          type: "ADMIN",
+          type: "USER",
         });
       }
     }
@@ -317,7 +365,7 @@ const updateStatus = async (id: string, userId: string, role: string, status: RE
   return result;
 };
 
-// Delete service request (Soft delete)
+// 6. Delete service request (Soft delete)
 const deleteServiceRequest = async (id: string, userId: string, role: string) => {
   const request = await ServiceRequestModel.findOne({ _id: id, isDeleted: false });
   if (!request) {
@@ -340,3 +388,5 @@ export const ServiceRequestServices = {
   updateStatus,
   deleteServiceRequest,
 };
+
+

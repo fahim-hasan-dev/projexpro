@@ -13,6 +13,8 @@ export const propertyManagerProfileSchema = z.object({
   businessAddress: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
+  zipCode: z.string().optional(),
+  country: z.string().optional(),
   taxId: z.string().optional(),
   portfolioSize: z.number().optional(),
   activeUnits: z.number().optional(),

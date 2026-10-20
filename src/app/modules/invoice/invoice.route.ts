@@ -23,6 +23,13 @@ router.post(
   InvoiceControllers.payInvoice
 );
 
+router.post(
+  "/service-request/:serviceRequestId/pay",
+  auth(USER_ROLES.PROPERTY_MANAGER),
+  requireApproval,
+  InvoiceControllers.payInvoiceByServiceRequest
+);
+
 router.get(
   "/my-invoices",
   auth(USER_ROLES.PROPERTY_MANAGER),

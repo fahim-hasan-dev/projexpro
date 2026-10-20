@@ -37,6 +37,7 @@ const createInvoiceFromServiceRequest = async (serviceRequestId: string | Types.
     .populate("serviceProvider", "firstName lastName userName email phone contactNumber image role profile");
 
   if (existingInvoice) {
+    await ServiceRequestModel.findByIdAndUpdate(serviceRequest._id, { invoice: existingInvoice._id });
     return existingInvoice;
   }
 
@@ -76,6 +77,7 @@ const createInvoiceFromServiceRequest = async (serviceRequestId: string | Types.
   };
 
   const newInvoice = await InvoiceModel.create(invoiceData);
+  await ServiceRequestModel.findByIdAndUpdate(serviceRequest._id, { invoice: newInvoice._id });
 
   const populatedInvoice = await InvoiceModel.findById(newInvoice._id)
     .populate({
@@ -160,6 +162,22 @@ const createCheckoutSessionForInvoice = async (invoiceId: string, userId: string
   });
 
   return { checkoutUrl: session.url, session };
+};
+
+// Create Stripe Checkout Session using Service Request ID directly
+const createCheckoutSessionForServiceRequest = async (serviceRequestId: string, userId: string) => {
+  let invoice = await InvoiceModel.findOne({ serviceRequest: serviceRequestId });
+  if (!invoice) {
+    const serviceRequest = await ServiceRequestModel.findById(serviceRequestId);
+    if (!serviceRequest) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "Service request not found");
+    }
+    invoice = await createInvoiceFromServiceRequest(serviceRequestId);
+  }
+  if (!invoice) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Invoice not found or could not be generated");
+  }
+  return await createCheckoutSessionForInvoice(invoice._id.toString(), userId);
 };
 
 // Get Single Invoice Details
@@ -290,6 +308,7 @@ const getAllInvoicesForAdmin = async (query: Record<string, unknown>) => {
 export const InvoiceServices = {
   createInvoiceFromServiceRequest,
   createCheckoutSessionForInvoice,
+  createCheckoutSessionForServiceRequest,
   getSingleInvoice,
   getInvoiceByServiceRequest,
   getMyInvoices,

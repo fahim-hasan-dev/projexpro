@@ -35,6 +35,9 @@ export const assignAndPayoutZod = z.object({
 export const updateStatusZod = z.object({
   body: z.object({
     status: z.nativeEnum(REQUEST_STATUS, { required_error: "Status is required" }),
+    reason: z.string().optional(),
+    note: z.string().optional(),
+    images: z.array(z.string()).or(z.string().transform((val) => [val])).optional(),
   }),
 });
 

@@ -14,6 +14,8 @@ import { Plan } from '../app/modules/plan/plan.model'
 import { InvoiceModel } from '../app/modules/invoice/invoice.model'
 import { INVOICE_STATUS } from '../app/modules/invoice/invoice.interface'
 import { NotificationService } from '../app/modules/notification/notification.service'
+import { ServiceRequestModel } from '../app/modules/serviceRequest/serviceRequest.model'
+import { ADMIN_ROLES } from '../enum/user'
 
 const handleStripeWebhook = async (req: Request, res: Response) => {
     logger.info('Received Stripe Webhook Event');
@@ -55,6 +57,13 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                                 stripePaymentIntentId: trxId,
                             });
 
+                            // Mark Service Request as paid
+                            if (invoice.serviceRequest) {
+                                await ServiceRequestModel.findByIdAndUpdate(invoice.serviceRequest, {
+                                    isPaid: true,
+                                });
+                            }
+
                             await Payment.create({
                                 email: session.customer_details?.email,
                                 amount: paidAmt,
@@ -64,6 +73,7 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                                 referenceId: invoice._id,
                             });
 
+                            // Notify Property Manager
                             try {
                                 await NotificationService.insertNotification({
                                     receiver: invoice.propertyManager,
@@ -75,6 +85,39 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                                 });
                             } catch (err) {
                                 logger.error("Failed to send notification for invoice payment", err);
+                            }
+
+                            // Notify Service Provider
+                            if (invoice.serviceProvider) {
+                                try {
+                                    await NotificationService.insertNotification({
+                                        receiver: invoice.serviceProvider,
+                                        title: "Job Payment Completed",
+                                        message: `Payment of $${paidAmt} for service request ${invoice.jobId || ''} has been completed.`,
+                                        referenceId: invoice._id,
+                                        screen: "INVOICE",
+                                        type: "USER",
+                                    });
+                                } catch (err) {
+                                    logger.error("Failed to notify service provider for invoice payment", err);
+                                }
+                            }
+
+                            // Notify Admins
+                            try {
+                                const admins = await User.find({ role: { $in: [ADMIN_ROLES.ADMIN, ADMIN_ROLES.SUPER_ADMIN] } });
+                                for (const admin of admins) {
+                                    await NotificationService.insertNotification({
+                                        receiver: admin._id,
+                                        title: "Invoice Payment Received",
+                                        message: `Payment of $${paidAmt} received for invoice ${invoice.invoiceNo} (Service Request: ${invoice.jobId || ''}).`,
+                                        referenceId: invoice._id,
+                                        screen: "INVOICE",
+                                        type: "ADMIN",
+                                    });
+                                }
+                            } catch (err) {
+                                logger.error("Failed to notify admins for invoice payment", err);
                             }
                         }
                     } else {

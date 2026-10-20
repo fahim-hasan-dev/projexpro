@@ -25,10 +25,13 @@ export const createCheckoutSession = async (userdata: JwtPayload, planId: string
         throw new ApiError(StatusCodes.BAD_REQUEST, "Selected plan is missing a Stripe priceId");
     }
 
-    // Determine initial quantity: use profile activeUnits if > 0, else fallback to profile portfolioSize or 1
-    const initialQuantity = user.profile?.activeUnits && user.profile.activeUnits > 0
-        ? user.profile.activeUnits
-        : (user.profile?.portfolioSize || 1);
+    // Determine initial quantity: use profile activeUnits or parse portfolioSize safely
+    let initialQuantity = 1;
+    if (user.profile?.activeUnits && Number(user.profile.activeUnits) > 0) {
+        initialQuantity = Number(user.profile.activeUnits);
+    } else if (typeof user.profile?.portfolioSize === 'number' && user.profile.portfolioSize > 0) {
+        initialQuantity = user.profile.portfolioSize;
+    }
 
     const session = await stripe.checkout.sessions.create({
         mode: "subscription",

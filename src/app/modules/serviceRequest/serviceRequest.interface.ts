@@ -10,7 +10,10 @@ export enum REQUEST_PRIORITY {
 export enum REQUEST_STATUS {
   PENDING = "Pending",
   ASSIGNED = "Assigned",
+  ACCEPTED = "Accepted",
+  REJECTED = "Rejected",
   IN_PROGRESS = "In Progress",
+  PENDING_APPROVAL = "Pending Approval",
   COMPLETED = "Completed",
   CANCELLED = "Cancelled",
 }
@@ -46,9 +49,16 @@ export interface IServiceRequest {
   basePayment?: number;
   specializedRate?: ISpecializedRate;
   finalPayout?: number;
+  rejectionReason?: string;
+  completionImages?: string[];
+  note?: string;
+  invoice?: Types.ObjectId;
+  isPaid?: boolean;
   isDeleted?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 export type ServiceRequestModelType = Model<IServiceRequest>;
+
+

@@ -1,0 +1,884 @@
+{
+  "info": {
+    "_postman_id": "projexpro-subscription-plans-v1",
+    "name": "ProjexPro - Subscription & Plan Management",
+    "description": "Complete Postman collection for ProjexPro Subscription & Plan Management.\n\nIncludes:\n1. Plan Management (Prime, Pro, Enterprise creation & retrieval)\n2. Prime & Pro Subscription Flow via Stripe Checkout Sessions\n3. Enterprise Subscription Flow via Custom Enterprise Request & Admin Approval\n4. Subscription Management (Upgrade, Cancel, Toggle Auto-Renew, Billing Portal)\n5. User Status & Admin Monitoring APIs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5002/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pmToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "primePlanId",
+      "value": "6ab0ab86da68611ab0818482",
+      "type": "string"
+    },
+    {
+      "key": "proPlanId",
+      "value": "6ab0ac02da68611ab0818484",
+      "type": "string"
+    },
+    {
+      "key": "enterprisePlanId",
+      "value": "6ad6f27bb440ba0aa3aefb28",
+      "type": "string"
+    },
+    {
+      "key": "enterpriseRequestId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "description": "Login as Super Admin and Property Manager to retrieve Bearer tokens.",
+      "item": [
+        {
+          "name": "Admin Login (Captures adminToken)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    var token = json.data && json.data.accessToken ? json.data.accessToken : json.data;",
+                  "    pm.collectionVariables.set('adminToken', token);",
+                  "    console.log('Saved adminToken successfully');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pronabhalder53@gmail.com\",\n  \"password\": \"hello123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/admin-login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "admin-login"
+              ]
+            },
+            "description": "Logs in as Platform Admin. Auto-saves accessToken to `{{adminToken}}` collection variable."
+          }
+        },
+        {
+          "name": "Property Manager Login (Captures pmToken)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    var token = json.data && json.data.accessToken ? json.data.accessToken : json.data;",
+                  "    pm.collectionVariables.set('pmToken', token);",
+                  "    console.log('Saved pmToken successfully');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"manager@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Logs in as a Property Manager. Auto-saves accessToken to `{{pmToken}}` collection variable."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Plan Management (Admin)",
+      "description": "APIs for creating, viewing, updating, and deleting subscription plans.",
+      "item": [
+        {
+          "name": "Get All Active Plans (Public / PM / SP / Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    var plans = json.data && json.data.plans ? json.data.plans : json.data;",
+                  "    if (Array.isArray(plans)) {",
+                  "        plans.forEach(function(p) {",
+                  "            if (p.planType === 'prime') pm.collectionVariables.set('primePlanId', p._id);",
+                  "            if (p.planType === 'pro') pm.collectionVariables.set('proPlanId', p._id);",
+                  "            if (p.planType === 'enterprise') pm.collectionVariables.set('enterprisePlanId', p._id);",
+                  "        });",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plan?paymentType=Monthly",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan"
+              ],
+              "query": [
+                {
+                  "key": "paymentType",
+                  "value": "Monthly"
+                }
+              ]
+            },
+            "description": "Returns all active plans. Accessible by Admins, Property Managers, and Service Providers. Automatically captures plan IDs."
+          }
+        },
+        {
+          "name": "Create Plan - PRIME (Stripe Tiered)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.data && json.data._id) {",
+                  "        pm.collectionVariables.set('primePlanId', json.data._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"PRIME\",\n  \"description\": \"For property managers starting out with core operational tools\",\n  \"planType\": \"prime\",\n  \"unitPrice\": 1,\n  \"minimumPrice\": 500,\n  \"duration\": \"1 month\",\n  \"paymentType\": \"Monthly\",\n  \"maxUnits\": 1000,\n  \"features\": [\n    \"Work Order & Ticket Management\",\n    \"Tenant & Vendor Communication\",\n    \"Basic Invoice & Payment Processing\",\n    \"Automated Monthly Financial Reporting\",\n    \"Email Customer Support\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/plan",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan"
+              ]
+            },
+            "description": "Creates the PRIME plan in DB and provisions the Stripe Product + Price in Stripe catalog."
+          }
+        },
+        {
+          "name": "Create Plan - ProjexPro Pro (Stripe Tiered / Popular)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.data && json.data._id) {",
+                  "        pm.collectionVariables.set('proPlanId', json.data._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"ProjexPro Pro\",\n  \"description\": \"For property professionals ready to streamline operations\",\n  \"planType\": \"pro\",\n  \"unitPrice\": 2,\n  \"minimumPrice\": 2000,\n  \"duration\": \"1 month\",\n  \"paymentType\": \"Monthly\",\n  \"maxUnits\": 15000,\n  \"features\": [\n    \"All Prime features, plus\",\n    \"Renovation & Turnover Workspace\",\n    \"Multi-Vendor Bidding & Comparison\",\n    \"Milestone-Based Project Approvals\",\n    \"Vendor Performance & Compliance Tracking\",\n    \"Priority Access to Vetted Marketplace\",\n    \"Priority 24/7 Account Support\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/plan",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan"
+              ]
+            },
+            "description": "Creates the ProjexPro Pro plan and provisions Stripe Tiered Price."
+          }
+        },
+        {
+          "name": "Create Plan - ENTERPRISE (Custom SLA / Approval)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.data && json.data._id) {",
+                  "        pm.collectionVariables.set('enterprisePlanId', json.data._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"ENTERPRISE\",\n  \"description\": \"For enterprise portfolio leaders needing custom scale & SLA support\",\n  \"planType\": \"enterprise\",\n  \"unitPrice\": 3.5,\n  \"minimumPrice\": 3500,\n  \"duration\": \"1 month\",\n  \"paymentType\": \"Monthly\",\n  \"maxUnits\": 50000,\n  \"features\": [\n    \"All Pro features, plus\",\n    \"Unlimited Property Units & Portfolios\",\n    \"Instant Emergency Job Matching\",\n    \"API Integration & Webhooks\",\n    \"Dedicated Account Manager (24/7)\",\n    \"Custom SLA Guarantee (99.9%)\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/plan",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan"
+              ]
+            },
+            "description": "Creates the ENTERPRISE plan. Notice: Does NOT create a Stripe price because Enterprise subscriptions are customized and approved offline."
+          }
+        },
+        {
+          "name": "Update Plan by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"minimumPrice\": 2200,\n  \"unitPrice\": 2.2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/plan/{{proPlanId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan",
+                "{{proPlanId}}"
+              ]
+            },
+            "description": "Update existing plan fields by Plan ID."
+          }
+        },
+        {
+          "name": "Delete Plan by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plan/{{proPlanId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan",
+                "{{proPlanId}}"
+              ]
+            },
+            "description": "Soft deletes a plan (`status: 'Delete'`) and cleans up Stripe catalog."
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Flow A: Prime & Pro Flow (Stripe Checkout)",
+      "description": "Self-service Stripe Checkout flow for Property Managers selecting Prime or Pro plans.",
+      "item": [
+        {
+          "name": "1. Create Stripe Checkout Session (Prime / Pro)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{pmToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/plan/create-checkout-session/{{proPlanId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "plan",
+                "create-checkout-session",
+                "{{proPlanId}}"
+              ]
+            },
+            "description": "Requires Property Manager to be approved. Generates a Stripe Checkout URL (`{ url }`). When the PM completes payment on Stripe, Stripe Webhook sets `user.subscribe = true` and `subscription.status = 'active'`."
+          }
+        },
+        {
+          "name": "2. Generate Stripe Customer Billing Portal",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{pmToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscription/billing-portal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "billing-portal"
+              ]
+            },
+            "description": "Generates a secure Stripe Customer Billing Portal URL where the property manager can view past invoices and update payment methods."
+          }
+        },
+        {
+          "name": "3. Upgrade Active Subscription Plan",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{pmToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPlanId\": \"{{proPlanId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscription/upgrade",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "upgrade"
+              ]
+            },
+            "description": "Switches an active Stripe subscription to a new plan tier."
+          }
+        },
+        {
+          "name": "4. Toggle Subscription Auto-Renew",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{pmToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"autoRenew\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscription/toggle-auto-renew",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "toggle-auto-renew"
+              ]
+            },
+            "description": "Toggles `cancel_at_period_end` on Stripe subscription."
+          }
+        },
+        {
+          "name": "5. Cancel Active Subscription",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{pmToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancelImmediately\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscription/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "cancel"
+              ]
+            },
+            "description": "Cancels subscription immediately or schedules cancellation at current period end."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Flow B: Enterprise Flow (Custom Request & Approval)",
+      "description": "Custom contract flow for large portfolios (15,000+ units) requiring administrator review and manual activation.",
+      "item": [
+        {
+          "name": "1. Submit Enterprise Plan Request (PM / SP)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    if (json.data && json.data._id) {",
+                  "        pm.collectionVariables.set('enterpriseRequestId', json.data._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{pmToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"{{enterprisePlanId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscription/enterprise/request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "enterprise",
+                "request"
+              ]
+            },
+            "description": "Property Manager requests Enterprise Plan. Creates an EnterpriseRequest record with status `pending`. Auto-saves `{{enterpriseRequestId}}`."
+          }
+        },
+        {
+          "name": "2. Get All Enterprise Requests (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    var reqs = json.data && json.data.requests ? json.data.requests : [];",
+                  "    if (reqs.length > 0 && reqs[0]._id) {",
+                  "        pm.collectionVariables.set('enterpriseRequestId', reqs[0]._id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscription/enterprise/requests?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "enterprise",
+                "requests"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Admin views all submitted enterprise portfolio requests with user and plan details."
+          }
+        },
+        {
+          "name": "3. Approve Enterprise Request & Activate Subscription (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planName\": \"ProjexPro Enterprise Portfolio Tier\",\n  \"effectiveDate\": \"2026-11-01T00:00:00.000Z\",\n  \"billingDate\": \"2026-12-01T00:00:00.000Z\",\n  \"numberOfUnits\": 15000,\n  \"perUnitFee\": 3.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/subscription/enterprise/approve/{{enterpriseRequestId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "enterprise",
+                "approve",
+                "{{enterpriseRequestId}}"
+              ]
+            },
+            "description": "Admin approves custom enterprise terms. Automatically calculates total monthly subscription (`15000 * 3.5 = $52,500`), activates subscription on user (`subscribe: true`, `subscription.status: 'active'`), and unlocks the Property Manager dashboard."
+          }
+        },
+        {
+          "name": "4. Reject Enterprise Request (Admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscription/enterprise/reject/{{enterpriseRequestId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "enterprise",
+                "reject",
+                "{{enterpriseRequestId}}"
+              ]
+            },
+            "description": "Admin rejects an enterprise request (`status: 'rejected'`)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Status Verification & Admin Monitoring",
+      "description": "Verify subscription status, user permissions, and admin subscription registry.",
+      "item": [
+        {
+          "name": "Get My Active Subscription Details (PM / SP)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{pmToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscription/my-plan",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription",
+                "my-plan"
+              ]
+            },
+            "description": "Fetches active plan details, limits, renewal date, and card/billing info for the logged-in user."
+          }
+        },
+        {
+          "name": "Get User Profile Status (Verify subscribe & approvalStatus)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{pmToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                "me"
+              ]
+            },
+            "description": "Verifies whether `approvalStatus: 'approved'` and `subscribe: true`."
+          }
+        },
+        {
+          "name": "Get All Platform Subscriptions (Admin Monitoring)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscription?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscription"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Admin endpoint to monitor all active and cancelled subscriptions across the entire platform."
+          }
+        }
+      ]
+    }
+  ]
+}

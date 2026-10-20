@@ -12,6 +12,10 @@ import config from '../../../config'
 
 // Create plan in DB
 const createPlanToDB = async (payload: IPlan): Promise<IPlan | null> => {
+  if (payload.price === undefined || payload.price === null) {
+    payload.price = payload.minimumPrice || 0;
+  }
+
   if (payload.planType !== 'enterprise') {
     // Create Stripe Product and Price
     const stripeData = await createStripeProductCatalog(payload);
@@ -51,6 +55,10 @@ const updatePlanToDB = async (
 
   // Note: Stripe product updates are limited, usually we just update the DB
   // or create a new price if the price changes.
+
+  if (payload.minimumPrice !== undefined && (payload.price === undefined || payload.price === null)) {
+    payload.price = payload.minimumPrice;
+  }
 
   const result = await Plan.findByIdAndUpdate(
     id,

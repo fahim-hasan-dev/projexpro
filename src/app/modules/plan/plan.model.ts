@@ -24,11 +24,13 @@ const planSchema = new Schema<IPlan, PlanModel>(
         },
         unitPrice: {
             type: Number,
-            required: false
+            required: false,
+            default: 0
         },
         minimumPrice: {
             type: Number,
-            required: false
+            required: false,
+            default: 0
         },
         duration: {
             type: String,
